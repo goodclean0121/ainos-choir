@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { hashPasscode } from "@/server/access";
 import { getAdminStore } from "@/server/admin";
 import { requireAdmin } from "@/server/requireAdmin";
-import type { NewSong, SongPatch } from "@/server/songStore";
+import { newSongError, type NewSong, type SongPatch } from "@/server/songStore";
 import { createSessionClient } from "@/lib/supabase/server";
 import { isTestMode } from "@/server/store";
 
@@ -18,14 +18,23 @@ const MIN_PASSCODE = 4;
 
 export async function saveDraft(song: NewSong): Promise<ActionState> {
   await requireAdmin();
-  const title = song.title.trim();
-  if (!title) return { error: "곡 제목을 적어 주세요." };
-  if (!song.xml.includes("<score-partwise") && !song.xml.includes("<score-timewise")) {
-    return { error: "악보 내용이 비어 있어요. 다시 가져와 주세요." };
+  // Only these fields come from the browser; status and checks always start fresh.
+  const input: NewSong = {
+    title: String(song.title ?? "").trim(),
+    xml: String(song.xml ?? ""),
+    roles: song.roles && typeof song.roles === "object" ? song.roles : {},
+    experimental: song.experimental === true,
+  };
+  const problem = newSongError(input);
+  if (problem) return { error: problem };
+  let id: string;
+  try {
+    id = (await (await getAdminStore()).create(input)).id;
+  } catch {
+    return { error: "저장하지 못했어요. 잠시 뒤에 다시 해 주세요." };
   }
-  const saved = await (await getAdminStore()).create({ ...song, title });
   revalidatePath("/admin");
-  redirect(`/admin/songs/${saved.id}`);
+  redirect(`/admin/songs/${id}`);
 }
 
 export async function updateSong(id: string, patch: SongPatch): Promise<ActionState> {

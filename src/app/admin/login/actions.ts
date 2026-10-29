@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSessionClient } from "@/lib/supabase/server";
 import { createRateLimiter } from "@/server/access";
+import { clientIp } from "@/server/clientIp";
 import { isTestMode } from "@/server/store";
 
 export interface LoginState {
@@ -19,9 +20,9 @@ export async function sendLoginLink(_prev: LoginState, form: FormData): Promise<
   const email = String(form.get("email") ?? "").trim().toLowerCase();
   const admins = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
   const h = await headers();
-  if (!limiter.hit(h.get("x-forwarded-for")?.split(",")[0]?.trim() || "local")) {
-    return { error: "잠시 뒤에 다시 해 주세요." };
-  }
+  const ip = await clientIp();
+  if (limiter.blocked(ip)) return { error: "잠시 뒤에 다시 해 주세요." };
+  limiter.fail(ip); // every request sends mail, so each one counts
   if (!admins.includes(email)) return { error: "관리자로 등록된 이메일이 아니에요." };
 
   const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;

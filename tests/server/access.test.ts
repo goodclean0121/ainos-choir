@@ -33,13 +33,23 @@ describe("access cookie", () => {
 });
 
 describe("rate limiter", () => {
-  it("allows ten tries a minute per key", () => {
+  it("counts only failed tries, so a full choir on one Wi-Fi can still get in", () => {
+    const limiter = createRateLimiter({ limit: 10, windowMs: 60_000, now: () => 0 });
+    for (let i = 0; i < 40; i++) expect(limiter.blocked("church")).toBe(false);
+    for (let i = 0; i < 10; i++) limiter.fail("church");
+    expect(limiter.blocked("church")).toBe(true);
+  });
+
+  it("blocks a key after ten failures in a minute", () => {
     let now = 0;
     const limiter = createRateLimiter({ limit: 10, windowMs: 60_000, now: () => now });
-    for (let i = 0; i < 10; i++) expect(limiter.hit("1.2.3.4")).toBe(true);
-    expect(limiter.hit("1.2.3.4")).toBe(false);
-    expect(limiter.hit("5.6.7.8")).toBe(true);
+    for (let i = 0; i < 10; i++) {
+      expect(limiter.blocked("1.2.3.4")).toBe(false);
+      limiter.fail("1.2.3.4");
+    }
+    expect(limiter.blocked("1.2.3.4")).toBe(true);
+    expect(limiter.blocked("5.6.7.8")).toBe(false);
     now = 60_001;
-    expect(limiter.hit("1.2.3.4")).toBe(true);
+    expect(limiter.blocked("1.2.3.4")).toBe(false);
   });
 });

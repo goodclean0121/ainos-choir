@@ -35,20 +35,19 @@ export function readAccess(cookie: string | undefined, secret: string): number |
   return expected.length === given.length && timingSafeEqual(expected, given) ? version : null;
 }
 
+/** Counts failed tries per key; correct passcodes never use up the allowance. */
 export function createRateLimiter({ limit, windowMs, now = Date.now }: { limit: number; windowMs: number; now?: () => number }) {
-  const hits = new Map<string, number[]>();
+  const failures = new Map<string, number[]>();
+  const recent = (key: string) => (failures.get(key) ?? []).filter((at) => now() - at < windowMs);
   return {
-    /** Records a try; false once the key has used up its tries in this window. */
-    hit(key: string): boolean {
-      const t = now();
-      const recent = (hits.get(key) ?? []).filter((at) => t - at < windowMs);
-      if (recent.length >= limit) {
-        hits.set(key, recent);
-        return false;
-      }
-      recent.push(t);
-      hits.set(key, recent);
-      return true;
+    blocked(key: string): boolean {
+      const list = recent(key);
+      if (list.length) failures.set(key, list);
+      else failures.delete(key);
+      return list.length >= limit;
+    },
+    fail(key: string) {
+      failures.set(key, [...recent(key), now()]);
     },
   };
 }

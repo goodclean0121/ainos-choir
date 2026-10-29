@@ -59,3 +59,17 @@ describe("memory store", () => {
     expect((await store.listPublished()).map((s) => s.title)).toEqual(["예제"]);
   });
 });
+
+describe("newSongError", () => {
+  const ok = { title: "곡", xml: "<score-partwise/>", roles: {}, experimental: false };
+  it("accepts a titled score", async () => {
+    const { newSongError } = await import("@/server/songStore");
+    expect(newSongError(ok)).toBeNull();
+  });
+  it("explains a missing or too long title and an empty score", async () => {
+    const { newSongError } = await import("@/server/songStore");
+    expect(newSongError({ ...ok, title: "  " })).toMatch("제목");
+    expect(newSongError({ ...ok, title: "가".repeat(201) })).toMatch("200자");
+    expect(newSongError({ ...ok, xml: "<html/>" })).toMatch("악보");
+  });
+});

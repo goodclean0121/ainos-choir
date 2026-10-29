@@ -23,5 +23,9 @@ describe("member gate", () => {
     expect(safeNext("//evil.example")).toBe("/");
     expect(safeNext("https://evil.example")).toBe("/");
     expect(safeNext(null)).toBe("/");
+    expect(safeNext("/\t/evil.example")).toBe("/");
+    expect(safeNext("/%09/evil.example")).toBe("/%09/evil.example");
+    expect(safeNext("/\\evil.example")).toBe("/");
+    expect(safeNext("/songs/a?x=1#y")).toBe("/songs/a?x=1#y");
   });
 });

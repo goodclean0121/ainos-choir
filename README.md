@@ -26,9 +26,11 @@ AINOS_TEST_MODE=1 npm run dev
 1. 표와 보안 규칙: `supabase/migrations/`의 SQL이 프로젝트에 적용돼 있어요(적용 완료).
 2. API 키: 대시보드 **Project Settings → API Keys**에서 publishable 키와 secret 키를 `.env.local`에 넣어요. secret 키는 서버에만 둬요.
 3. 로그인 메일: **Authentication → URL Configuration**에서 Site URL을 앱 주소로(개발 중엔 `http://localhost:3000`), Redirect URLs에 `<앱 주소>/auth/confirm`을 추가해요.
-4. 메일 템플릿: **Authentication → Emails → Magic Link**의 링크를
+4. 메일 템플릿: **Authentication → Emails**에서 **Magic Link**와 **Confirm signup** 두 템플릿의 링크를 모두
    `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/admin` 로 바꿔요.
-   (휴대폰 메일 앱이 링크를 다른 브라우저로 열어도 로그인돼요.)
+   (첫 로그인은 계정을 만드는 Confirm signup 메일로 가요. 휴대폰 메일 앱이 링크를 다른 브라우저로 열어도 로그인돼요.)
+   관리자 권한은 비밀번호 없이 메일 링크로 만든 계정에만 붙어요. 누가 먼저 관리자 이메일로 비밀번호 가입을 해 두었다면
+   **Authentication → Users**에서 그 계정을 지우고 다시 로그인 링크를 받으세요.
 5. 관리자 추가: SQL 편집기에서 `insert into private.admin_emails (email) values ('새주소@example.com');` 후 `.env.local`의 `ADMIN_EMAILS`에도 추가해요.
 6. 첫 로그인 뒤 `/admin/settings`에서 합창단 암호를 정해요. 암호가 없으면 단원은 곡을 못 열어요.
 

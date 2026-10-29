@@ -114,14 +114,19 @@ export function ImportScore({
     if (!result || !onSave) return;
     stop();
     setSaving(true);
-    const outcome = await onSave({
-      title,
-      xml: result.xml,
-      roles,
-      experimental: result.format === "pdf" || result.format === "image",
-    });
-    setSaving(false);
-    if (outcome?.error) setStatus({ kind: "error", message: outcome.error });
+    try {
+      const outcome = await onSave({
+        title,
+        xml: result.xml,
+        roles,
+        experimental: result.format === "pdf" || result.format === "image",
+      });
+      if (outcome?.error) setStatus({ kind: "error", message: outcome.error });
+    } catch {
+      setStatus({ kind: "error", message: "저장하지 못했어요. 파일이 너무 크면 나눠서 올려 주세요." });
+    } finally {
+      setSaving(false);
+    }
   }
 
   function solo(partId: string) {

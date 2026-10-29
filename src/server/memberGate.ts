@@ -12,5 +12,9 @@ export function accessGranted(cookie: string | undefined, access: ChoirAccess | 
 
 /** A same-site path to return to after the passcode screen. */
 export function safeNext(next: string | null | undefined): string {
-  return next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/";
+  // Control characters and backslashes are dropped or rewritten by URL parsing ("/\t/evil" → "//evil").
+  if (!next || !next.startsWith("/") || /[\u0000-\u001f\u007f\\]/.test(next)) return "/";
+  const base = "http://same.site";
+  const url = new URL(next, base);
+  return url.origin === base ? `${url.pathname}${url.search}${url.hash}` : "/";
 }

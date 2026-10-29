@@ -44,6 +44,19 @@ export interface SongStore {
   setAccess(hash: string): Promise<ChoirAccess>;
 }
 
+export const MAX_TITLE = 200;
+
+/** What is wrong with a new song, or null when it can be saved. */
+export function newSongError(song: NewSong): string | null {
+  const title = song.title.trim();
+  if (!title) return "곡 제목을 적어 주세요.";
+  if (title.length > MAX_TITLE) return `곡 제목은 ${MAX_TITLE}자까지 쓸 수 있어요.`;
+  if (!song.xml.includes("<score-partwise") && !song.xml.includes("<score-timewise")) {
+    return "악보 내용이 비어 있어요. 다시 가져와 주세요.";
+  }
+  return null;
+}
+
 /** Why a song cannot be published yet, or null when it can. */
 export function canPublish(song: Pick<SongRecord, "experimental" | "checked">): string | null {
   if (song.experimental && !song.checked) return "자동 인식한 악보예요. 파트마다 들어 보고 확인한 뒤에 공개할 수 있어요.";
