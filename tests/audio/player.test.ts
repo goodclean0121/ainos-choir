@@ -7,6 +7,8 @@ const model: ScoreModel = {
   tempo: 120,
   keys: [],
   measureCount: 1,
+  lineNotes: {},
+  timeline: [{ measure: 1, start: 0, length: 4 }],
   parts: [
     { id: "S", name: "Soprano", sourceName: "Soprano", sourcePartId: "P1", staff: 1, voiceSlot: "only", line: 0, lineCount: 1 },
     { id: "B", name: "Bass", sourceName: "Bass", sourcePartId: "P2", staff: 1, voiceSlot: "only", line: 0, lineCount: 1 },

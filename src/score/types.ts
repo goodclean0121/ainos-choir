@@ -36,6 +36,10 @@ export interface ScoreModel {
   tempo: number;
   keys: KeySignature[];
   measureCount: number;
+  /** partId → document-order indices of the <note> elements that make up that line. */
+  lineNotes: Record<string, number[]>;
+  /** Measures in played order, with their start and length in quarters. */
+  timeline: { measure: number; start: number; length: number }[];
 }
 
 export interface MeasureMarks {
