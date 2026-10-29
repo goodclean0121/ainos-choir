@@ -1,0 +1,52 @@
+:root {
+  --bg: #fffdf8;
+  --fg: #1d1b16;
+  --muted: #6b6457;
+  --accent: #2f5d8a;
+  --warn-bg: #fff4cc;
+  --warn-fg: #5c4300;
+  --error-bg: #fde3e1;
+  --error-fg: #7a1d14;
+  --line: #e2dccf;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17161a;
+    --fg: #f2efe8;
+    --muted: #a8a194;
+    --accent: #8db8e3;
+    --warn-bg: #3d3214;
+    --warn-fg: #f5df9a;
+    --error-bg: #46201c;
+    --error-fg: #f6b9b2;
+    --line: #34323a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.page { max-width: 960px; margin: 0 auto; padding: 16px; }
+
+a { color: var(--accent); }
+
+button, select, input[type="file"]::file-selector-button {
+  min-height: 48px;
+  font-size: 18px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--fg);
+}
+
+button.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }

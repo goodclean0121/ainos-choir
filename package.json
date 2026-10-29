@@ -1,0 +1,33 @@
+{
+  "name": "ainos-choir",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run --passWithNoTests",
+    "e2e": "playwright test",
+    "test:converter": "node --test converter/"
+  },
+  "dependencies": {
+    "jszip": "^3.10.2",
+    "next": "16.4.3",
+    "opensheetmusicdisplay": "^2.2.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tone": "^15.1.22"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.3",
+    "jsdom": "^29.1.1",
+    "typescript": "^5",
+    "vitest": "^5.0.5"
+  }
+}
