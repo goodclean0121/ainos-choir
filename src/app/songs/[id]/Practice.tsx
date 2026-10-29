@@ -214,90 +214,96 @@ export function Practice({ songId, song: given, backHref }: { songId: string; so
 
   return (
     <div className="practice">
-      <header className="practice-head">
-        {backHref && (
-          <Link href={backHref} className="back-circle" aria-label="곡 목록으로">
-            <span aria-hidden="true">←</span>
-          </Link>
-        )}
-        <h1>{song.title}</h1>
-        <div className="part-picker" role="group" aria-label="내 파트">
-          {model.parts.map((p, i) => {
-            const role = roles[p.id];
-            const css = FAMILY[role?.[0] ?? ""]?.css ?? "unknown";
-            return (
-              <button
-                key={p.id}
-                type="button"
-                className={`part-choice part-${css}`}
-                aria-pressed={myPart === p.id}
-                onClick={() => choosePart(p.id)}
-              >
-                {partLabel(p, role, i)}
-              </button>
-            );
-          })}
-        </div>
-      </header>
-
-      <div className="practice-body">
-        <div className="practice-tools">
-          {!myPart && <p className="pick-hint">부를 파트를 위에서 고르면 그 파트 음표만 진하게 보여요.</p>}
-          <div className={`note-card part-${myCss}${tapped ? " has-note" : ""}`}>
-            <small>누른 음</small>
-            <p className="tapped" aria-live="polite">
-              {tapped ?? ""}
-            </p>
-            {!tapped && <p className="note-empty">악보에서 음표를 누르면 그 음을 들려줘요.</p>}
-          </div>
-          <div className="card switch-row">
-            <span id="solfege-label">
-              계이름 표시
-              {!myPart && <small>파트를 고르면 켤 수 있어요</small>}
-            </span>
-            <button
-              type="button"
-              role="switch"
-              className="switch"
-              aria-checked={solfegeOn}
-              aria-labelledby="solfege-label"
-              disabled={!myPart}
-              onClick={() => setSolfegeOn((v) => !v)}
-            />
-          </div>
-          {markings.length > 0 && (
-            <section className="card markings" aria-labelledby="markings-title">
-              <h2 id="markings-title">이 곡의 기호</h2>
-              <div className="marking-chips">
-                {markings.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    className="chip"
-                    aria-pressed={marking?.id === m.id}
-                    onClick={() => setMarking(marking?.id === m.id ? undefined : m)}
-                  >
-                    {m.symbol}
-                  </button>
-                ))}
-              </div>
-              {marking ? (
-                <div className="marking-sheet" role="region" aria-label={`${marking.name} 설명`}>
-                  <p className="marking-name">{marking.name}</p>
-                  <p>{marking.meaning}</p>
-                </div>
-              ) : (
-                <p className="marking-empty">기호를 누르면 뜻을 알려 줘요.</p>
-              )}
-            </section>
+      <div className="practice-stage">
+        <header className="practice-head">
+          {backHref && (
+            <Link href={backHref} className="back-circle" aria-label="곡 목록으로">
+              <span aria-hidden="true">←</span>
+            </Link>
           )}
-        </div>
+          <div className="practice-title">
+            <span className="mode-label">연습 모드</span>
+            <h1>{song.title}</h1>
+          </div>
+          <div className="part-picker" role="group" aria-label="내 파트">
+            {model.parts.map((p, i) => {
+              const role = roles[p.id];
+              const css = FAMILY[role?.[0] ?? ""]?.css ?? "unknown";
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={`part-choice part-${css}`}
+                  aria-pressed={myPart === p.id}
+                  onClick={() => choosePart(p.id)}
+                >
+                  {partLabel(p, role, i)}
+                </button>
+              );
+            })}
+          </div>
+        </header>
 
         <div className="score-card">
-          <p className="tap-hint">음표를 누르면 그 음을 들려줘요.</p>
-          <ScoreView xml={scoreXml} onNoteTap={onNoteTap} cursorMeasure={cursorMeasure} />
+          <ScoreView
+            xml={scoreXml}
+            onNoteTap={onNoteTap}
+            cursorMeasure={cursorMeasure}
+            paged
+            toolbarStart={
+              <div className="solfege-toggle">
+                <span id="solfege-label">계이름</span>
+                <button
+                  type="button"
+                  role="switch"
+                  className="switch"
+                  aria-checked={solfegeOn}
+                  aria-labelledby="solfege-label"
+                  title={myPart ? undefined : "파트를 고르면 켤 수 있어요"}
+                  disabled={!myPart}
+                  onClick={() => setSolfegeOn((v) => !v)}
+                />
+              </div>
+            }
+          />
         </div>
+      </div>
 
+      <aside className="practice-side" aria-label="연습 도구">
+        {!myPart && <p className="pick-hint">부를 파트를 위에서 고르면 그 파트 음표만 진하게 보이고 계이름을 켤 수 있어요.</p>}
+        <div className={`note-card part-${myCss}${tapped ? " has-note" : ""}`}>
+          <small>누른 음</small>
+          <p className="tapped" aria-live="polite">
+            {tapped ?? ""}
+          </p>
+          {!tapped && <p className="note-empty">악보에서 음표를 누르면 그 음을 들려줘요.</p>}
+        </div>
+        {markings.length > 0 && (
+          <section className="card markings" aria-labelledby="markings-title">
+            <h2 id="markings-title">이 곡의 기호</h2>
+            <div className="marking-chips">
+              {markings.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className="chip"
+                  aria-pressed={marking?.id === m.id}
+                  onClick={() => setMarking(marking?.id === m.id ? undefined : m)}
+                >
+                  {m.symbol}
+                </button>
+              ))}
+            </div>
+            {marking ? (
+              <div className="marking-sheet" role="region" aria-label={`${marking.name} 설명`}>
+                <p className="marking-name">{marking.name}</p>
+                <p>{marking.meaning}</p>
+              </div>
+            ) : (
+              <p className="marking-empty">기호를 누르면 뜻을 알려 줘요.</p>
+            )}
+          </section>
+        )}
         <section className="card volumes" aria-labelledby="volumes-title">
           <h2 id="volumes-title">파트별 음량</h2>
           <ul>
@@ -322,7 +328,7 @@ export function Practice({ songId, song: given, backHref }: { songId: string; so
             })}
           </ul>
         </section>
-      </div>
+      </aside>
 
       <div className="dock" role="region" aria-label="재생">
         <div className="dock-row">

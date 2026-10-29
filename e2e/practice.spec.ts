@@ -25,7 +25,7 @@ test("practise the alto part of the example song", async ({ page }) => {
   await expect(page.getByRole("button", { name: "알토" })).toHaveAttribute("aria-pressed", "true");
   await expect(score.locator(`svg [fill="${DIM}"]`).first()).toBeAttached({ timeout: 15_000 });
 
-  await page.getByRole("switch", { name: /계이름 표시/ }).click();
+  await page.getByRole("switch", { name: /계이름/ }).click();
   await expect(score.locator("svg text", { hasText: /^도$/ }).first()).toBeAttached({ timeout: 15_000 });
 
   await page.getByRole("button", { name: "mp" }).click();
@@ -36,6 +36,12 @@ test("practise the alto part of the example song", async ({ page }) => {
   const box = (await head.boundingBox())!;
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   await expect(page.locator(".tapped")).toContainText("(");
+
+  // The score is one screen at a time, with zoom buttons.
+  await expect(page.locator(".pager-count")).toContainText("1 /");
+  const size = await page.locator(".zoom-value").textContent();
+  await page.getByRole("button", { name: "크게" }).click();
+  await expect(page.locator(".zoom-value")).not.toHaveText(size!);
 
   await page.reload();
   await expect(page.getByRole("button", { name: "알토" })).toHaveAttribute("aria-pressed", "true");

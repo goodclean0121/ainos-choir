@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 const [dist, out] = process.argv.slice(2);
 let html = readFileSync(join(dist, "index.html"), "utf8");
-html = html.replace(/<script type="module" crossorigin src="\.\/([^"]+)"><\/script>/, (_, f) => "");
+html = html.replace(/<script type="module" crossorigin src="\.\/[^"]+"><\/script>/, "");
 html = html.replace(/<link rel="stylesheet" crossorigin href="\.\/([^"]+)">/, (_, f) => `<style>${readFileSync(join(dist, f), "utf8")}</style>`);
 const js = readFileSync(join(dist, (readFileSync(join(dist, "index.html"), "utf8").match(/src="\.\/([^"]+\.js)"/) || [])[1]), "utf8");
 // Inline, so nothing is fetched: file:// pages cannot load sibling scripts as modules.
