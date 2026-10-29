@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScoreView, type TappedNote } from "@/components/ScoreView";
 import { createPlayer } from "@/audio/player";
 import { decorateScore } from "@/score/decorate";
@@ -9,7 +9,7 @@ import { fifthsAt, noteLabel, toMidi } from "@/score/noteName";
 import { parseMusicXml } from "@/score/parseMusicXml";
 import { assignRoles } from "@/score/roles";
 import type { PartInfo, ScoreModel } from "@/score/types";
-import { loadSong } from "@/songs/loadSong";
+import { loadSong, type Song } from "@/songs/loadSong";
 import { recallPart, rememberPart } from "@/songs/myPart";
 
 const OTHER_VOLUME = 0.35;
@@ -39,8 +39,8 @@ function defaultVolumes(model: ScoreModel, mine: string | undefined) {
   return Object.fromEntries(model.parts.map((p) => [p.id, !mine || p.id === mine ? 1 : OTHER_VOLUME]));
 }
 
-export function Practice({ params }: { params: Promise<{ id: string }> }) {
-  const songId = decodeURIComponent(use(params).id);
+/** The practice screen. `song` comes from the server; without it the song is loaded in the browser (imported scores). */
+export function Practice({ songId, song: given }: { songId: string; song?: Song }) {
   const [song, setSong] = useState<Loaded>();
   const [error, setError] = useState<string>();
   const [myPart, setMyPart] = useState<string>();
@@ -72,7 +72,7 @@ export function Practice({ params }: { params: Promise<{ id: string }> }) {
 
   useEffect(() => {
     let cancelled = false;
-    loadSong(songId)
+    (given ? Promise.resolve(given) : loadSong(songId))
       .then((s) => {
         if (cancelled) return;
         const model = parseMusicXml(s.xml);
@@ -82,7 +82,7 @@ export function Practice({ params }: { params: Promise<{ id: string }> }) {
           title: s.title,
           xml: s.xml,
           model,
-          roles: s.roles ?? assignRoles(model.parts),
+          roles: s.roles && Object.keys(s.roles).length > 0 ? s.roles : assignRoles(model.parts),
           markings: findMarkings(s.xml),
         });
         setMyPart(mine);
@@ -96,7 +96,7 @@ export function Practice({ params }: { params: Promise<{ id: string }> }) {
       cancelled = true;
       player.current?.stop();
     };
-  }, [songId]);
+  }, [songId, given]);
 
   const scoreXml = useMemo(() => {
     if (!song || !myPart) return song?.xml;
