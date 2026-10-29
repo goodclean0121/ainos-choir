@@ -467,6 +467,8 @@ select.dock-pill { -webkit-appearance: none; appearance: none; text-align: cente
   border-radius: 14px;
   background: var(--sky);
   color: var(--ink);
+  width: 100%;
+  min-width: 0;
 }
 .unlock-form button { margin-top: 6px; }
 .unlock-form .notice { margin: 4px 0 0; }
@@ -474,7 +476,8 @@ select.dock-pill { -webkit-appearance: none; appearance: none; text-align: cente
 /* ---------- Admin ---------- */
 .admin-nav {
   display: flex;
-  flex-wrap: wrap;
+  overflow-x: auto;
+  scrollbar-width: none;
   gap: 4px;
   align-items: center;
   margin-bottom: 16px;
@@ -483,10 +486,10 @@ select.dock-pill { -webkit-appearance: none; appearance: none; text-align: cente
   background: var(--card);
   box-shadow: var(--shadow);
 }
-.admin-nav a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 16px; border-radius: 999px; font-weight: 600; text-decoration: none; color: var(--ink); }
+.admin-nav a { flex: none; white-space: nowrap; display: inline-flex; align-items: center; min-height: 48px; padding: 0 16px; border-radius: 999px; font-weight: 600; text-decoration: none; color: var(--ink); }
 .admin-nav a:hover { background: var(--sky); }
 .admin-nav form { margin-left: auto; }
-.admin-nav button { border: 0; color: var(--soft); }
+.admin-nav button { white-space: nowrap; border: 0; color: var(--soft); }
 .admin-songs a::after { display: none; }
 .admin-songs a { justify-content: space-between; }
 .song-meta { display: block; color: var(--soft); font-size: 0.9rem; margin: 4px 20px 0; }
