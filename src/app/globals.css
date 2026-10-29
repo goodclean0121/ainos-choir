@@ -147,3 +147,72 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 }
 .songs a:hover { color: var(--accent); }
 .home-admin { color: var(--ink-soft); font-size: 0.95rem; }
+
+/* Practice screen */
+.page-practice { padding-bottom: 200px; }
+.page-practice h1 { font-size: 1.35rem; margin-top: 0; }
+.back { margin: 0; font-size: 0.95rem; }
+.back a { display: inline-flex; align-items: center; min-height: 48px; text-decoration: none; }
+.hint { color: var(--ink-soft); font-size: 0.95rem; margin: 0 0 8px; }
+.my-part, .markings { margin: 12px 0; }
+.my-part h2, .markings h2 { font-size: 1rem; color: var(--ink-soft); font-weight: 600; margin-bottom: 8px; }
+
+.part-picker { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 6px; }
+.part-choice {
+  min-height: 48px;
+  padding: 0 6px 0 12px;
+  border: 2px solid var(--voice);
+  color: var(--ink);
+  font-weight: 600;
+  text-align: left;
+  background: linear-gradient(90deg, var(--voice) 0 6px, var(--paper) 6px);
+}
+.part-choice[aria-pressed="true"] { background: var(--voice); color: var(--paper); }
+
+.practice-tools { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 12px 0; }
+.toggle[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.toggle[aria-pressed="true"]::before { content: "✓ "; }
+button:disabled { opacity: 0.45; cursor: default; }
+
+.marking-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { min-width: 56px; font-family: Georgia, "Times New Roman", serif; font-style: italic; font-weight: 600; }
+.chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--paper); }
+.marking-sheet {
+  margin-top: 10px;
+  padding: 12px 16px;
+  border-left: 4px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--paper));
+  border-radius: 0 10px 10px 0;
+}
+.marking-sheet p { margin: 0; }
+.marking-name { font-weight: 700; }
+.marking-symbol { font-family: Georgia, "Times New Roman", serif; font-style: italic; margin-right: 4px; }
+
+.volumes { margin: 12px 0; }
+.volumes summary { min-height: 48px; display: flex; align-items: center; cursor: pointer; color: var(--accent); font-weight: 600; }
+.volumes ul { list-style: none; padding: 0; margin: 0; }
+.volumes label { display: grid; grid-template-columns: 7em 1fr; gap: 12px; align-items: center; min-height: 48px; }
+.volumes input { width: 100%; min-height: 32px; accent-color: var(--accent); }
+
+.tap-hint { color: var(--ink-soft); font-size: 0.95rem; margin: 12px 0 8px; }
+.score-tappable { cursor: pointer; }
+
+.play-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  padding: 8px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+  box-shadow: 0 -6px 18px rgb(0 0 0 / 0.06);
+}
+.play-bar > * { max-width: 848px; margin-left: auto; margin-right: auto; }
+.tapped { margin: 0 auto 6px; font-weight: 700; color: var(--accent); }
+.tapped:empty { display: none; }
+.play-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.play-row + .play-row { margin-top: 8px; }
+.play-row label { display: flex; gap: 6px; align-items: center; }
+.play-row .primary { min-width: 72px; }
+.play-row select, .play-row button { padding: 0 12px; }
