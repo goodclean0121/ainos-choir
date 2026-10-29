@@ -33,21 +33,37 @@ export function ScoreView({ xml, onNoteTap, cursorMeasure = null }: Props) {
     tapRef.current = onNoteTap;
   }, [onNoteTap]);
 
+  // One drawer per mount: OSMD never removes its window resize listener, so a new
+  // instance per score change would leave old ones redrawing on every resize.
+  const drawer = useRef<Promise<OpenSheetMusicDisplay> | null>(null);
+  useEffect(() => {
+    const el = container.current;
+    return () => {
+      void drawer.current?.then((osmd) => osmd.setOptions({ autoResize: false }));
+      drawer.current = null;
+      if (el) el.innerHTML = "";
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     const el = container.current;
     if (!el) return;
+    drawer.current ??= import("opensheetmusicdisplay").then(
+      ({ OpenSheetMusicDisplay }) =>
+        new OpenSheetMusicDisplay(el, {
+          autoResize: true,
+          backend: "svg",
+          drawTitle: true,
+          followCursor: true,
+          cursorsOptions: [{ type: 3, color: "#1f5566", alpha: 0.12, follow: true }],
+        }),
+    );
+    const pending = drawer.current;
     (async () => {
-      const { OpenSheetMusicDisplay } = await import("opensheetmusicdisplay");
+      const osmd = await pending;
       if (cancelled) return;
-      el.innerHTML = "";
-      const osmd = new OpenSheetMusicDisplay(el, {
-        autoResize: true,
-        backend: "svg",
-        drawTitle: true,
-        followCursor: true,
-        cursorsOptions: [{ type: 3, color: "#1f5566", alpha: 0.12, follow: true }],
-      });
+      osmdRef.current = null;
       try {
         await osmd.load(xml);
         if (cancelled) return;
@@ -61,7 +77,6 @@ export function ScoreView({ xml, onNoteTap, cursorMeasure = null }: Props) {
     })();
     return () => {
       cancelled = true;
-      osmdRef.current = null;
     };
   }, [xml]);
 

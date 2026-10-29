@@ -54,6 +54,21 @@ export function Practice({ params }: { params: Promise<{ id: string }> }) {
   const [tapped, setTapped] = useState<string>();
   const [marking, setMarking] = useState<GlossaryEntry>();
   const player = useRef<ReturnType<typeof createPlayer> | null>(null);
+  const toneModule = useRef<typeof import("tone") | null>(null);
+  const unmounted = useRef(false);
+  const playRequest = useRef(0);
+
+  // Load Tone.js up front so a tap reaches Tone.start() without waiting on a download
+  // (iOS only unlocks audio inside the tap itself).
+  useEffect(() => {
+    unmounted.current = false;
+    void import("tone").then((m) => {
+      toneModule.current = m;
+    });
+    return () => {
+      unmounted.current = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,16 +105,20 @@ export function Practice({ params }: { params: Promise<{ id: string }> }) {
 
   async function getPlayer() {
     if (!song) return null;
-    if (!player.current) {
-      const Tone = await import("tone");
-      player.current = createPlayer(song.model, Tone);
-    }
+    if (player.current) return player.current;
+    const Tone = toneModule.current ?? (await import("tone"));
+    if (unmounted.current) return null;
+    // Another call may have created it while we waited.
+    player.current ??= createPlayer(song.model, Tone);
     return player.current;
   }
 
   async function play(opts: { loop?: boolean; from?: number; to?: number } = {}) {
+    setPlaying(true);
+    const request = ++playRequest.current;
     const p = await getPlayer();
-    if (!p) return;
+    // Stopped, or asked again, while the player was loading.
+    if (!p || request !== playRequest.current) return;
     const loop = opts.loop ?? loopOn;
     const [from, to] = loop ? [opts.from ?? range[0], opts.to ?? range[1]] : [0, undefined];
     await p.play({
@@ -114,10 +133,10 @@ export function Practice({ params }: { params: Promise<{ id: string }> }) {
         setCurrent(null);
       },
     });
-    setPlaying(true);
   }
 
   function stop() {
+    playRequest.current++;
     player.current?.stop();
     setPlaying(false);
     setCurrent(null);

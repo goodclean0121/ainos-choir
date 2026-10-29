@@ -53,8 +53,11 @@ export function createPlayer(model: ScoreModel, tone: ToneLike) {
   let nodes: Disposable[] = [];
   let channels = new Map<string, { volume: { value: number } }>();
   let noteSynth: InstanceType<ToneLike["PolySynth"]> | null = null;
+  /** Bumped by every stop() (and so every play()); a play overtaken while starting does nothing. */
+  let generation = 0;
 
   function stop() {
+    generation++;
     const transport = tone.getTransport();
     transport.stop();
     transport.cancel();
@@ -75,7 +78,10 @@ export function createPlayer(model: ScoreModel, tone: ToneLike) {
 
   async function play({ volumes, tempoRatio, from = 0, to, loop = false, onMeasure, onEnd }: PlayOptions) {
     stop();
+    const mine = generation;
     await tone.start();
+    // Another play() or a stop() came in while the audio was starting.
+    if (mine !== generation) return;
     const transport = tone.getTransport();
     setTempo(tempoRatio);
     // Schedule in ticks so a tempo change applies to notes already scheduled.

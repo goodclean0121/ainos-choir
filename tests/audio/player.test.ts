@@ -175,4 +175,26 @@ describe("createPlayer", () => {
     expect(f.played).toHaveLength(1);
     expect(Math.round(f.played[0].freq)).toBe(440);
   });
+
+  it("schedules a song only once when play is pressed twice quickly", async () => {
+    const f = fakeTone();
+    const player = createPlayer(model, f.tone);
+    await Promise.all([
+      player.play({ volumes: {}, tempoRatio: 1 }),
+      player.play({ volumes: {}, tempoRatio: 1 }),
+    ]);
+    expect(noteEvents(f)).toHaveLength(5);
+    expect(f.channels).toHaveLength(2);
+  });
+});
+
+describe("createPlayer stop while starting", () => {
+  it("plays nothing when stopped before the audio has started", async () => {
+    const f = fakeTone();
+    const player = createPlayer(model, f.tone);
+    const pending = player.play({ volumes: {}, tempoRatio: 1 });
+    player.stop();
+    await pending;
+    expect(f.scheduled).toHaveLength(0);
+  });
 });
