@@ -5,8 +5,7 @@ import { assignRoles } from "@/score/roles";
 import { findMarkings } from "@/score/glossary";
 
 describe("the bundled practice example", () => {
-  const index = JSON.parse(readFileSync("public/songs/index.json", "utf8"));
-  const xml = readFileSync(`public/songs/${index[0].file}`, "utf8");
+  const xml = readFileSync("src/server/seed/practice-example.musicxml", "utf8");
 
   it("parses into four named parts", () => {
     const model = parseMusicXml(xml);
