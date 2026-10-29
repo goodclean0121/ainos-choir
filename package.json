@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run --passWithNoTests",
     "e2e": "playwright test",
-    "test:converter": "node --test converter/"
+    "test:converter": "node --test converter/*.test.mjs"
   },
   "dependencies": {
     "jszip": "^3.10.2",
