@@ -9,9 +9,18 @@ import "./standalone.css";
 
 const DEMO: Song = { title: "연습용 예제 (4성부 화음 연습)", xml: demoXml };
 
+// Scores dropped into standalone/songs/ (kept out of git) are bundled into the trial too.
+const BUNDLED = Object.entries(
+  import.meta.glob<string>("./songs/*.musicxml", { query: "?raw", import: "default", eager: true }),
+).map(([path, xml]) => {
+  const title = /<work-title>([^<]+)<\/work-title>/.exec(xml)?.[1] ?? path.replace(/^.*\/|\.musicxml$/g, "");
+  return { id: path, song: { title, xml } as Song };
+});
+const SONGS = [...BUNDLED, { id: "demo", song: DEMO }];
+
 /** A trial build of the practice screen that runs from one file, with no server. */
 function App() {
-  const [song, setSong] = useState<{ id: string; song: Song }>({ id: "demo", song: DEMO });
+  const [song, setSong] = useState<{ id: string; song: Song }>(SONGS[0]);
   const [error, setError] = useState<string>();
 
   async function open(file: File) {
@@ -30,7 +39,26 @@ function App() {
   return (
     <main className="page page-practice">
       <div className="trial-bar">
-        <span>체험판: 서버 없이 이 컴퓨터에서만 돌아가요.</span>
+        {SONGS.length > 1 ? (
+          <select
+            className="trial-songs"
+            aria-label="곡 고르기"
+            value={SONGS.some((x) => x.id === song.id) ? song.id : ""}
+            onChange={(e) => {
+              const next = SONGS.find((x) => x.id === e.target.value);
+              if (next) setSong(next);
+            }}
+          >
+            {!SONGS.some((x) => x.id === song.id) && <option value="">{song.song.title}</option>}
+            {SONGS.map((x) => (
+              <option key={x.id} value={x.id}>
+                {x.song.title}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span>체험판: 서버 없이 이 컴퓨터에서만 돌아가요.</span>
+        )}
         <label className="trial-open">
           <span>다른 악보 열기 (MusicXML)</span>
           <input
