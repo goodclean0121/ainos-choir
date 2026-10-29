@@ -17,6 +17,8 @@ interface RawNote {
   group: number;
   tieStart: boolean;
   tieStop: boolean;
+  /** Position of this <note> among all <note> elements of the document. */
+  xmlIndex: number;
 }
 
 type PitchedNote = RawNote & { midi: number };
@@ -35,7 +37,7 @@ const childNum = (el: Element, tag: string, fallback: number) => {
 };
 const isPitched = (n: RawNote): n is PitchedNote => n.midi !== undefined;
 
-function readPart(part: Element, name: string, measureLengths: number[]): PartTimeline {
+function readPart(part: Element, name: string, measureLengths: number[], noteCounter: { next: number }): PartTimeline {
   let divisions = 1;
   let staves = 1;
   // MusicXML <pitch> is the written pitch; octave clefs only change the drawing, <transpose> changes the sound.
@@ -59,6 +61,7 @@ function readPart(part: Element, name: string, measureLengths: number[]): PartTi
       } else if (el.tagName === "forward") {
         cursor += childNum(el, "duration", 0) / divisions;
       } else if (el.tagName === "note") {
+        const xmlIndex = noteCounter.next++;
         if (el.getElementsByTagName("grace").length || el.getElementsByTagName("cue").length) continue;
         const isChord = el.getElementsByTagName("chord").length > 0;
         const duration = childNum(el, "duration", 0) / divisions;
@@ -87,6 +90,7 @@ function readPart(part: Element, name: string, measureLengths: number[]): PartTi
           group,
           tieStart: ties.includes("start"),
           tieStop: ties.includes("stop"),
+          xmlIndex,
         });
       }
     }
@@ -224,7 +228,8 @@ export function parseMusicXml(xml: string): ScoreModel {
   );
   const partEls = Array.from(doc.getElementsByTagName("part"));
   const measureLengths: number[] = [];
-  const timelines = partEls.map((p) => readPart(p, names.get(p.getAttribute("id") ?? "") ?? "", measureLengths));
+  const noteCounter = { next: 0 };
+  const timelines = partEls.map((p) => readPart(p, names.get(p.getAttribute("id") ?? "") ?? "", measureLengths, noteCounter));
 
   const parts: PartInfo[] = [];
   const lines = new Map<string, PitchedNote[]>();
@@ -252,9 +257,11 @@ export function parseMusicXml(xml: string): ScoreModel {
 
   const playOrder = partEls.length ? expandRepeats(readMarks(partEls[0])) : [];
   const played: PlayedNote[] = [];
+  const timeline: ScoreModel["timeline"] = [];
   let playedOffset = 0;
   for (const measureNo of playOrder) {
     const index = measureNo - 1;
+    timeline.push({ measure: measureNo, start: playedOffset, length: measureLengths[index] ?? 0 });
     for (const part of parts) {
       for (const n of lines.get(part.id) ?? []) {
         if (n.measureIndex !== index) continue;
@@ -281,5 +288,12 @@ export function parseMusicXml(xml: string): ScoreModel {
     tempo: tempoAttr ? Number(tempoAttr) : DEFAULT_TEMPO,
     keys: partEls.length ? readKeys(partEls[0]) : [],
     measureCount: measureLengths.length,
+    lineNotes: Object.fromEntries(
+      parts.map((p) => {
+        const line = lines.get(p.id) ?? [];
+        return [p.id, [...line].sort((a, b) => a.measureIndex - b.measureIndex || a.start - b.start).map((n) => n.xmlIndex)];
+      }),
+    ),
+    timeline,
   };
 }

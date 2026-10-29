@@ -1,11 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { PartList } from "@/components/PartList";
 import { ScoreView } from "@/components/ScoreView";
 import { createPlayer } from "@/audio/player";
 import { importScore, type ImportResult } from "@/score/importScore";
 import { createLatest } from "@/score/latest";
+import { IMPORTED_ID, saveImported } from "@/songs/loadSong";
 import type { ScoreFormat } from "@/score/types";
 
 const ACCEPT = ".musicxml,.xml,.mxl,.mscz,.mscx,.mid,.midi,.pdf,.png,.jpg,.jpeg";
@@ -34,6 +36,7 @@ export function ImportScore({ converterUrl }: { converterUrl?: string }) {
   const [fileName, setFileName] = useState<string>();
   const player = useRef<ReturnType<typeof createPlayer> | null>(null);
   const latest = useRef(createLatest());
+  const router = useRouter();
 
   async function load(file: File) {
     const request = latest.current.begin();
@@ -76,6 +79,18 @@ export function ImportScore({ converterUrl }: { converterUrl?: string }) {
   function stop() {
     player.current?.stop();
     setPlaying(false);
+  }
+
+  function practice() {
+    if (!result) return;
+    stop();
+    try {
+      saveImported({ title: result.model.title || fileName || "가져온 곡", xml: result.xml, roles });
+    } catch {
+      setStatus({ kind: "error", message: "이 브라우저에서는 연습 화면으로 넘길 수 없어요. 사생활 보호 모드를 꺼 주세요." });
+      return;
+    }
+    router.push(`/songs/${IMPORTED_ID}`);
   }
 
   function solo(partId: string) {
@@ -160,6 +175,9 @@ export function ImportScore({ converterUrl }: { converterUrl?: string }) {
                 <option value={1}>원래 빠르기</option>
               </select>
             </label>
+            <button type="button" onClick={practice}>
+              이 곡으로 연습하기
+            </button>
           </div>
 
           <PartList
