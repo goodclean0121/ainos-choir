@@ -132,3 +132,18 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 }
 
 .score { background: #fff; border-radius: 12px; padding: 8px; overflow-x: auto; }
+
+.songs { list-style: none; padding: 0; margin: 0 0 32px; border-top: 1px solid var(--rule); }
+.songs a {
+  display: flex;
+  align-items: center;
+  min-height: 64px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+}
+.songs a:hover { color: var(--accent); }
+.home-admin { color: var(--ink-soft); font-size: 0.95rem; }
