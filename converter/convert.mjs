@@ -43,6 +43,7 @@ export async function convert(inputPath, format, run = defaultRun) {
       await run(MSCORE, ["-o", join(outDir, "out.musicxml"), inputPath], options);
     }
   } catch (err) {
+    if (err?.code === "ENOENT") throw new Error("변환 프로그램이 서버에 설치되어 있지 않아요");
     if (err?.killed || err?.signal === "SIGTERM") throw new Error("변환 시간이 너무 오래 걸려요");
     throw new Error("변환에 실패했어요");
   }

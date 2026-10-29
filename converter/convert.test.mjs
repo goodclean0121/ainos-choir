@@ -125,3 +125,10 @@ test("health check and CORS preflight", async () => {
     assert.match(pre.headers.get("access-control-allow-headers"), /x-filename/);
   });
 });
+
+test("a missing converter program is reported as a setup problem", async () => {
+  const run = async () => {
+    throw Object.assign(new Error("spawn audiveris ENOENT"), { code: "ENOENT" });
+  };
+  await assert.rejects(convert("/in/a.pdf", "pdf", run), { message: "변환 프로그램이 서버에 설치되어 있지 않아요" });
+});
