@@ -20,9 +20,9 @@ describe("parseMusicXml", () => {
     expect(pitches(model, "P4", 1)).toEqual([48, 43, 45, 43]);
   });
 
-  it("plays a treble-8vb tenor an octave below the written pitch", () => {
+  it("plays a treble-8vb tenor at its pitch as written in MusicXML", () => {
     const model = load("four-parts.musicxml");
-    expect(pitches(model, "P3", 1)[0]).toBe(60); // written C5
+    expect(pitches(model, "P3", 1)[0]).toBe(60); // <octave>4</octave> under clef-octave-change -1
   });
 
   it("merges tied notes into one longer note", () => {

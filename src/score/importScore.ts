@@ -20,6 +20,8 @@ export interface ImportResult {
 export interface ImportOptions {
   converterUrl?: string;
   fetch?: typeof fetch;
+  /** Aborting it cancels a conversion in progress. */
+  signal?: AbortSignal;
 }
 
 const isZip = (bytes: Uint8Array) => bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
@@ -28,16 +30,18 @@ async function toXml(buffer: ArrayBuffer): Promise<string> {
   return isZip(new Uint8Array(buffer)) ? unzipMxl(buffer) : new TextDecoder().decode(buffer);
 }
 
-async function convertRemotely(file: File, buffer: ArrayBuffer, converterUrl: string, fetchFn: typeof fetch) {
+async function convertRemotely(file: File, buffer: ArrayBuffer, converterUrl: string, fetchFn: typeof fetch, cancel?: AbortSignal) {
+  const timeout = AbortSignal.timeout(CONVERTER_TIMEOUT_MS);
   let response: Response;
   try {
     response = await fetchFn(`${converterUrl.replace(/\/+$/, "")}/convert`, {
       method: "POST",
       headers: { "x-filename": encodeURIComponent(file.name) },
       body: buffer,
-      signal: AbortSignal.timeout(CONVERTER_TIMEOUT_MS),
+      signal: cancel ? AbortSignal.any([cancel, timeout]) : timeout,
     });
   } catch (err) {
+    if (cancel?.aborted) throw new Error("변환을 취소했어요.");
     if (err instanceof DOMException && (err.name === "TimeoutError" || err.name === "AbortError")) {
       throw new Error("변환 시간이 너무 오래 걸려요. 잠시 후 다시 시도해 주세요.");
     }
@@ -65,7 +69,7 @@ export async function importScore(file: File, opts: ImportOptions = {}): Promise
     xml = await unzipMxl(buffer);
   } else {
     if (!opts.converterUrl) throw new Error("이 형식은 변환 서버가 필요해요. 관리자에게 변환 서버 설정을 요청해 주세요.");
-    const converted = await convertRemotely(file, buffer, opts.converterUrl, opts.fetch ?? fetch);
+    const converted = await convertRemotely(file, buffer, opts.converterUrl, opts.fetch ?? fetch, opts.signal);
     xml = converted.xml;
     if (converted.experimental) warnings.push(EXPERIMENTAL_WARNING);
     if (format === "midi") warnings.push("MIDI 파일에는 가사와 파트 이름이 없을 수 있어요. 파트 역할을 직접 확인해 주세요.");

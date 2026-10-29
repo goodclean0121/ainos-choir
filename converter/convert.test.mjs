@@ -132,3 +132,60 @@ test("a missing converter program is reported as a setup problem", async () => {
   };
   await assert.rejects(convert("/in/a.pdf", "pdf", run), { message: "변환 프로그램이 서버에 설치되어 있지 않아요" });
 });
+
+test("a malformed file name header gets a 400 instead of crashing the server", async () => {
+  await withServer({ convertFn: async () => assert.fail("should not convert") }, async (url) => {
+    const res = await fetch(`${url}/convert`, { method: "POST", headers: { "x-filename": "%E0%A4%A.pdf" }, body: "x" });
+    assert.equal(res.status, 400);
+    assert.equal((await fetch(`${url}/health`)).status, 200);
+  });
+});
+
+test("temporary upload and output folders are removed after each conversion", async () => {
+  const { existsSync } = await import("node:fs");
+  const seen = [];
+  const convertFn = async (path) => {
+    const out = path + ".out.musicxml";
+    writeFileSync(out, "<score-partwise/>");
+    seen.push(path);
+    return { xmlPath: out, experimental: false, cleanup: () => seen.push("cleaned") };
+  };
+  await withServer({ convertFn }, async (url) => {
+    const res = await fetch(`${url}/convert`, { method: "POST", headers: { "x-filename": "a.mscz" }, body: "PK" });
+    assert.equal(res.status, 200);
+    await res.text();
+  });
+  assert.equal(existsSync(seen[0]), false);
+  assert.equal(seen[1], "cleaned");
+});
+
+test("convert offers a cleanup that deletes its output folder", async () => {
+  const { existsSync } = await import("node:fs");
+  const { dirname } = await import("node:path");
+  const { run } = fakeRun((cmd, args) => writeFileSync(args[1], "<score-partwise/>"));
+  const result = await convert("/in/song.mscz", "musescore", run);
+  result.cleanup();
+  assert.equal(existsSync(dirname(result.xmlPath)), false);
+});
+
+test("too many conversions at once are turned away with a retry message", async () => {
+  let release;
+  const gate = new Promise((r) => (release = r));
+  const convertFn = async (path) => {
+    await gate;
+    const out = path + ".out.musicxml";
+    writeFileSync(out, "<score-partwise/>");
+    return { xmlPath: out, experimental: false };
+  };
+  await withServer({ convertFn, maxJobs: 1 }, async (url) => {
+    const first = fetch(`${url}/convert`, { method: "POST", headers: { "x-filename": "a.mscz" }, body: "PK" });
+    await new Promise((r) => setTimeout(r, 50));
+    const second = fetch(`${url}/convert`, { method: "POST", headers: { "x-filename": "b.mscz" }, body: "PK" });
+    const early = await Promise.race([second, new Promise((r) => setTimeout(() => r("waiting"), 500))]);
+    release();
+    assert.notEqual(early, "waiting", "second request should be answered without waiting");
+    assert.equal(early.status, 503);
+    assert.match((await early.json()).error, /잠시 후 다시/);
+    assert.equal((await first).status, 200);
+  });
+});

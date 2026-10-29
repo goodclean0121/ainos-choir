@@ -5,6 +5,7 @@ import { PartList } from "@/components/PartList";
 import { ScoreView } from "@/components/ScoreView";
 import { createPlayer } from "@/audio/player";
 import { importScore, type ImportResult } from "@/score/importScore";
+import { createLatest } from "@/score/latest";
 import type { ScoreFormat } from "@/score/types";
 
 const ACCEPT = ".musicxml,.xml,.mxl,.mscz,.mscx,.mid,.midi,.pdf,.png,.jpg,.jpeg";
@@ -30,10 +31,14 @@ export function ImportScore({ converterUrl }: { converterUrl?: string }) {
   const [tempoRatio, setTempoRatio] = useState(1);
   const [playing, setPlaying] = useState(false);
   const lastFile = useRef<File | null>(null);
+  const [fileName, setFileName] = useState<string>();
   const player = useRef<ReturnType<typeof createPlayer> | null>(null);
+  const latest = useRef(createLatest());
 
   async function load(file: File) {
+    const request = latest.current.begin();
     lastFile.current = file;
+    setFileName(file.name);
     player.current?.stop();
     setPlaying(false);
     setResult(undefined);
@@ -42,14 +47,21 @@ export function ImportScore({ converterUrl }: { converterUrl?: string }) {
       message: NEEDS_CONVERTER.test(file.name) ? "악보를 변환하고 있어요… 사진·PDF는 몇 분 걸릴 수 있어요." : "악보를 읽고 있어요…",
     });
     try {
-      const imported = await importScore(file, { converterUrl });
+      const imported = await importScore(file, { converterUrl, signal: request.signal });
+      if (!request.isCurrent()) return;
       setResult(imported);
       setRoles(imported.roles);
       setVolumes(Object.fromEntries(imported.model.parts.map((p) => [p.id, 1])));
       setStatus({ kind: "idle" });
     } catch (err) {
+      if (!request.isCurrent()) return;
       setStatus({ kind: "error", message: err instanceof Error ? err.message : "악보를 읽지 못했어요." });
     }
+  }
+
+  function cancelLoad() {
+    latest.current.cancel();
+    setStatus({ kind: "error", message: "변환을 취소했어요." });
   }
 
   async function play(nextVolumes: Record<string, number>) {
@@ -98,14 +110,17 @@ export function ImportScore({ converterUrl }: { converterUrl?: string }) {
       </div>
 
       {status.kind === "working" && (
-        <p className="notice" role="status">
-          {status.message}
-        </p>
+        <div className="notice" role="status">
+          <p>{status.message}</p>
+          <button type="button" onClick={cancelLoad}>
+            취소
+          </button>
+        </div>
       )}
       {status.kind === "error" && (
         <div className="notice notice-error" role="alert">
           <p>{status.message}</p>
-          {lastFile.current && (
+          {fileName && (
             <button type="button" onClick={() => lastFile.current && load(lastFile.current)}>
               다시 시도
             </button>
@@ -116,7 +131,7 @@ export function ImportScore({ converterUrl }: { converterUrl?: string }) {
       {result && (
         <>
           <section className="summary" aria-label="가져온 악보">
-            <h2>{result.model.title || lastFile.current?.name}</h2>
+            <h2>{result.model.title || fileName}</h2>
             <p>
               {FORMAT_LABEL[result.format]} 악보에서 파트 {result.model.parts.length}개, 마디 {result.model.measureCount}개를 찾았어요.
             </p>

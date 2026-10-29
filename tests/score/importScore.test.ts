@@ -70,4 +70,15 @@ describe("importScore", () => {
   it("rejects unsupported files with the detector's guidance", async () => {
     await expect(importScore(new File(["x"], "a.sib"), { fetch: vi.fn() })).rejects.toThrow("MusicXML로 내보내");
   });
+
+  it("stops when the caller cancels", async () => {
+    const controller = new AbortController();
+    const fetch = vi.fn().mockImplementation((_url, init: RequestInit) => {
+      controller.abort();
+      return Promise.reject(init.signal?.reason ?? new DOMException("aborted", "AbortError"));
+    });
+    await expect(importScore(pdfFile(), { converterUrl: "http://conv", fetch, signal: controller.signal })).rejects.toThrow(
+      "변환을 취소했어요",
+    );
+  });
 });

@@ -1,12 +1,13 @@
 import { createServer } from "node:http";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { extname, join } from "node:path";
+import { dirname, extname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { convert } from "./convert.mjs";
 
 const FORMATS = { mscz: "musescore", mscx: "musescore", mid: "midi", midi: "midi", pdf: "pdf", png: "image", jpg: "image", jpeg: "image" };
 const MAX_BYTES = 50 * 1024 * 1024;
+const MAX_JOBS = Number(process.env.MAX_JOBS || 2);
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, headers);
@@ -31,8 +32,15 @@ function readBody(req, maxBytes) {
   });
 }
 
-export function createConverterServer({ convertFn = convert, maxBytes = MAX_BYTES, allowedOrigin = process.env.ALLOWED_ORIGIN || "*" } = {}) {
-  return createServer(async (req, res) => {
+export function createConverterServer({
+  convertFn = convert,
+  maxBytes = MAX_BYTES,
+  maxJobs = MAX_JOBS,
+  allowedOrigin = process.env.ALLOWED_ORIGIN || "*",
+} = {}) {
+  let running = 0;
+
+  async function handle(req, res) {
     res.setHeader("access-control-allow-origin", allowedOrigin);
     res.setHeader("access-control-allow-methods", "POST, GET, OPTIONS");
     res.setHeader("access-control-allow-headers", "x-filename, content-type");
@@ -42,7 +50,13 @@ export function createConverterServer({ convertFn = convert, maxBytes = MAX_BYTE
     if (req.method === "GET" && req.url === "/health") return send(res, 200, "ok");
     if (req.method !== "POST" || req.url !== "/convert") return sendJson(res, 404, { error: "없는 주소예요" });
 
-    const filename = decodeURIComponent(String(req.headers["x-filename"] ?? ""));
+    let filename;
+    try {
+      filename = decodeURIComponent(String(req.headers["x-filename"] ?? ""));
+    } catch {
+      req.resume();
+      return sendJson(res, 400, { error: "파일 이름을 읽을 수 없어요" });
+    }
     const ext = extname(filename).slice(1).toLowerCase();
     const format = FORMATS[ext];
     if (!format) {
@@ -50,22 +64,42 @@ export function createConverterServer({ convertFn = convert, maxBytes = MAX_BYTE
       return sendJson(res, 400, { error: `지원하지 않는 형식이에요(.${ext})` });
     }
 
+    if (running >= maxJobs) {
+      req.resume();
+      return sendJson(res, 503, { error: "지금 변환하는 악보가 많아요. 잠시 후 다시 시도해 주세요." });
+    }
+
+    running++;
     let body;
     try {
       body = await readBody(req, maxBytes);
     } catch (err) {
+      running--;
       return sendJson(res, err.status ?? 400, { error: "파일이 너무 커요(최대 50MB)" });
     }
 
     const inputPath = join(mkdtempSync(join(tmpdir(), "ainos-upload-")), `input.${ext}`);
     writeFileSync(inputPath, body);
     try {
-      const { xmlPath, experimental } = await convertFn(inputPath, format);
-      const type = xmlPath.endsWith(".mxl") ? "application/vnd.recordare.musicxml" : "application/vnd.recordare.musicxml+xml";
-      send(res, 200, readFileSync(xmlPath), { "content-type": type, "x-experimental": experimental ? "1" : "0" });
+      const { xmlPath, experimental, cleanup } = await convertFn(inputPath, format);
+      try {
+        const type = xmlPath.endsWith(".mxl") ? "application/vnd.recordare.musicxml" : "application/vnd.recordare.musicxml+xml";
+        send(res, 200, readFileSync(xmlPath), { "content-type": type, "x-experimental": experimental ? "1" : "0" });
+      } finally {
+        cleanup?.();
+      }
     } catch (err) {
       sendJson(res, 500, { error: err.message || "변환에 실패했어요" });
+    } finally {
+      running--;
+      rmSync(dirname(inputPath), { recursive: true, force: true });
     }
+  }
+
+  return createServer((req, res) => {
+    handle(req, res).catch(() => {
+      if (!res.headersSent) sendJson(res, 500, { error: "변환에 실패했어요" });
+    });
   });
 }
 

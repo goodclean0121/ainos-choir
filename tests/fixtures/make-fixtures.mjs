@@ -73,6 +73,7 @@ function score(title, parts) {
 const q = (...pitches) => pitches.map((p) => note(p, 1)).join("");
 
 // 1. Four separate parts, F major, tempo 90, tenor in treble-8vb, soprano tie in m2.
+// Pitches are sounding pitches: MusicXML octave clefs change only the drawing (as MuseScore exports them).
 const fourParts = score("Four Parts", [
   {
     id: "P1",
@@ -87,8 +88,8 @@ const fourParts = score("Four Parts", [
     id: "P3",
     name: "Tenor",
     measures: [
-      attributes({ fifths: -1, octaveChange: -1 }) + q("C5", "G4", "E4", "G4"),
-      q("G4", "G4", "G4") + note("r", 1),
+      attributes({ fifths: -1, octaveChange: -1 }) + q("C4", "G3", "E3", "G3"),
+      q("G3", "G3", "G3") + note("r", 1),
     ],
   },
   { id: "P4", name: "Bass", measures: [attributes({ fifths: -1, clefs: [["F", 4]] }) + q("C3", "G2", "A2", "G2"), q("C3", "C3", "C3") + note("r", 1)] },
@@ -143,8 +144,8 @@ const sixParts = score("Six Parts", [
   { id: "P1", name: "Soprano 1", measures: [attributes({ fifths: -1 }) + whole("C5"), whole("D5"), whole("E5")] },
   { id: "P2", name: "Soprano 2", measures: [attributes({ fifths: -1 }) + whole("A4"), whole("B4"), whole("C5")] },
   { id: "P3", name: "Alto", measures: [attributes({ fifths: -1 }) + whole("F4"), whole("G4"), note("r", 4, { measureRest: true })] },
-  { id: "P4", name: "Tenor 1", measures: [attributes({ fifths: -1, octaveChange: -1 }) + whole("C5"), whole("D5"), whole("E5")] },
-  { id: "P5", name: "Tenor 2", measures: [attributes({ fifths: -1, octaveChange: -1 }) + whole("A4"), whole("B4"), whole("C5")] },
+  { id: "P4", name: "Tenor 1", measures: [attributes({ fifths: -1, octaveChange: -1 }) + whole("C4"), whole("D4"), whole("E4")] },
+  { id: "P5", name: "Tenor 2", measures: [attributes({ fifths: -1, octaveChange: -1 }) + whole("A3"), whole("B3"), whole("C4")] },
   { id: "P6", name: "Bass", measures: [attributes({ fifths: -1, clefs: [["F", 4]] }) + whole("F3"), whole("G3"), whole("C3")] },
 ]);
 

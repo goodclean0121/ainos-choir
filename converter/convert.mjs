@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdtempSync, readdirSync, statSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -28,10 +28,11 @@ function findFirst(dir, re) {
  * Convert a score file to MusicXML.
  * @param {string} inputPath
  * @param {"musescore"|"midi"|"pdf"|"image"} format
- * @returns {Promise<{ xmlPath: string, experimental: boolean }>}
+ * @returns {Promise<{ xmlPath: string, experimental: boolean, cleanup: () => void }>}
  */
 export async function convert(inputPath, format, run = defaultRun) {
   const outDir = mkdtempSync(join(tmpdir(), "ainos-convert-"));
+  const cleanup = () => rmSync(outDir, { recursive: true, force: true });
   // MuseScore needs a display unless Qt renders offscreen.
   const options = { timeout: CONVERT_TIMEOUT_MS, maxBuffer: 16 * 1024 * 1024, env: { ...process.env, QT_QPA_PLATFORM: "offscreen" } };
   const recognised = format === "pdf" || format === "image";
@@ -43,12 +44,16 @@ export async function convert(inputPath, format, run = defaultRun) {
       await run(MSCORE, ["-o", join(outDir, "out.musicxml"), inputPath], options);
     }
   } catch (err) {
+    cleanup();
     if (err?.code === "ENOENT") throw new Error("변환 프로그램이 서버에 설치되어 있지 않아요");
     if (err?.killed || err?.signal === "SIGTERM") throw new Error("변환 시간이 너무 오래 걸려요");
     throw new Error("변환에 실패했어요");
   }
 
   const xmlPath = findFirst(outDir, recognised ? /\.mxl$/ : /\.musicxml$/);
-  if (!xmlPath) throw new Error("변환에 실패했어요");
-  return { xmlPath, experimental: recognised };
+  if (!xmlPath) {
+    cleanup();
+    throw new Error("변환에 실패했어요");
+  }
+  return { xmlPath, experimental: recognised, cleanup };
 }

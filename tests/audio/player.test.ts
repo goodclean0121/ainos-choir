@@ -8,8 +8,8 @@ const model: ScoreModel = {
   keys: [],
   measureCount: 1,
   parts: [
-    { id: "S", name: "Soprano", sourcePartId: "P1", staff: 1, voiceSlot: "only" },
-    { id: "B", name: "Bass", sourcePartId: "P2", staff: 1, voiceSlot: "only" },
+    { id: "S", name: "Soprano", sourceName: "Soprano", sourcePartId: "P1", staff: 1, voiceSlot: "only", line: 0, lineCount: 1 },
+    { id: "B", name: "Bass", sourceName: "Bass", sourcePartId: "P2", staff: 1, voiceSlot: "only", line: 0, lineCount: 1 },
   ],
   notes: [
     { partId: "S", midi: 69, start: 0, duration: 1, measure: 1 },
