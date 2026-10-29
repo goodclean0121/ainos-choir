@@ -54,7 +54,7 @@ export function ScoreView({ xml, onNoteTap, cursorMeasure = null }: Props) {
         new OpenSheetMusicDisplay(el, {
           autoResize: true,
           backend: "svg",
-          drawTitle: true,
+          drawTitle: false,
           followCursor: true,
           cursorsOptions: [{ type: 3, color: "#1f5566", alpha: 0.12, follow: true }],
         }),
@@ -67,6 +67,8 @@ export function ScoreView({ xml, onNoteTap, cursorMeasure = null }: Props) {
       try {
         await osmd.load(xml);
         if (cancelled) return;
+        // Phones get a smaller staff so a line holds more than one bar.
+        osmd.zoom = el.clientWidth < 600 ? 0.6 : 1;
         osmd.render();
         osmdRef.current = osmd;
         setError(undefined);

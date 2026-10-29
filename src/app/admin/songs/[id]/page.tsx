@@ -32,7 +32,7 @@ async function AdminSong({ params }: { params: Promise<{ id: string }> }) {
 
 export default function AdminSongPage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <main className="page page-practice">
+    <main className="page page-wide page-practice">
       <Suspense fallback={<p role="status">불러오는 중…</p>}>
         <AdminSong params={params} />
       </Suspense>
