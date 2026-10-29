@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { PartList } from "@/components/PartList";
 import { ScoreView } from "@/components/ScoreView";
 import { createPlayer } from "@/audio/player";
+import { unlockAudio } from "@/audio/unlock";
 import { importScore, type ImportResult } from "@/score/importScore";
 import { createLatest } from "@/score/latest";
 import { IMPORTED_ID, saveImported } from "@/songs/loadSong";
@@ -85,6 +86,7 @@ export function ImportScore({
   }
 
   async function play(nextVolumes: Record<string, number>) {
+    unlockAudio({ start() {} });
     if (!result) return;
     const Tone = await import("tone");
     player.current?.stop();

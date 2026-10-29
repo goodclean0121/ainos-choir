@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScoreView, type TappedNote } from "@/components/ScoreView";
 import { createPlayer } from "@/audio/player";
+import { unlockAudio } from "@/audio/unlock";
 import { decorateScore } from "@/score/decorate";
 import { findMarkings, type GlossaryEntry } from "@/score/glossary";
 import { fifthsAt, noteLabel, toMidi } from "@/score/noteName";
@@ -114,7 +115,13 @@ export function Practice({ songId, song: given, backHref }: { songId: string; so
     return player.current;
   }
 
+  /** Must run synchronously inside the tap, before anything is awaited. */
+  function unlock() {
+    unlockAudio(toneModule.current ?? { start() {} });
+  }
+
   async function play(opts: { loop?: boolean; from?: number; to?: number } = {}) {
+    unlock();
     setPlaying(true);
     const request = ++playRequest.current;
     const p = await getPlayer();
@@ -176,6 +183,7 @@ export function Practice({ songId, song: given, backHref }: { songId: string; so
   const onNoteTap = useCallback(
     (note: TappedNote) => {
       if (!song) return;
+      unlock();
       setTapped(noteLabel(note, fifthsAt(song.model.keys, note.measure)));
       void getPlayer().then((p) => p?.playNote(toMidi(note)));
     },

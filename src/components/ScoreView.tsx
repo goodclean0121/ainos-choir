@@ -25,6 +25,7 @@ const OSMD_OCTAVE_OFFSET = 3;
 export function ScoreView({ xml, onNoteTap, cursorMeasure = null }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const osmdRef = useRef<OpenSheetMusicDisplay | null>(null);
+  const osmdModule = useRef<typeof import("opensheetmusicdisplay") | null>(null);
   const [error, setError] = useState<string>();
   const [rendered, setRendered] = useState(0);
   const tapRef = useRef(onNoteTap);
@@ -49,16 +50,16 @@ export function ScoreView({ xml, onNoteTap, cursorMeasure = null }: Props) {
     let cancelled = false;
     const el = container.current;
     if (!el) return;
-    drawer.current ??= import("opensheetmusicdisplay").then(
-      ({ OpenSheetMusicDisplay }) =>
-        new OpenSheetMusicDisplay(el, {
-          autoResize: true,
-          backend: "svg",
-          drawTitle: false,
-          followCursor: true,
-          cursorsOptions: [{ type: 3, color: "#1f5566", alpha: 0.12, follow: true }],
-        }),
-    );
+    drawer.current ??= import("opensheetmusicdisplay").then((mod) => {
+      osmdModule.current = mod;
+      return new mod.OpenSheetMusicDisplay(el, {
+        autoResize: true,
+        backend: "svg",
+        drawTitle: false,
+        followCursor: true,
+        cursorsOptions: [{ type: 3, color: "#1f5566", alpha: 0.12, follow: true }],
+      });
+    });
     const pending = drawer.current;
     (async () => {
       const osmd = await pending;
@@ -96,10 +97,11 @@ export function ScoreView({ xml, onNoteTap, cursorMeasure = null }: Props) {
     cursor.show();
   }, [cursorMeasure, rendered]);
 
-  async function handleClick(e: React.MouseEvent) {
+  // Synchronous on purpose: iOS only allows sound to start inside the tap itself.
+  function handleClick(e: React.MouseEvent) {
     const osmd = osmdRef.current;
-    if (!osmd || !tapRef.current) return;
-    const { PointF2D } = await import("opensheetmusicdisplay");
+    if (!osmd || !tapRef.current || !osmdModule.current) return;
+    const { PointF2D } = osmdModule.current;
     const sheet = osmd.GraphicSheet;
     const point = sheet.svgToOsmd(sheet.domToSvg(new PointF2D(e.clientX, e.clientY)));
     const graphical = sheet.GetNearestNote(point, new PointF2D(2.5, 3));
