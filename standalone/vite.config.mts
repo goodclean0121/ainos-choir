@@ -6,7 +6,6 @@ const src = fileURLToPath(new URL("../src", import.meta.url));
 export default defineConfig({
   root: fileURLToPath(new URL(".", import.meta.url)),
   base: "./",
-  esbuild: { jsx: "automatic" },
   resolve: {
     alias: [
       { find: "next/link", replacement: fileURLToPath(new URL("./link.tsx", import.meta.url)) },
