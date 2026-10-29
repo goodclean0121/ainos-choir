@@ -26,6 +26,9 @@ export default function Home() {
       <Suspense fallback={<p role="status">곡 목록을 불러오고 있어요…</p>}>
         <SongList />
       </Suspense>
+      <p className="home-admin">
+        <Link href="/admin">관리자</Link>
+      </p>
     </main>
   );
 }

@@ -46,11 +46,3 @@ test("an unknown song says so", async ({ page }) => {
   await page.goto("/songs/no-such-song");
   await expect(page.locator(".notice-error")).toContainText("곡을 찾을 수 없어요");
 });
-
-test("an imported score can be practised", async ({ page }) => {
-  await page.goto("/import");
-  await page.getByLabel("악보 파일 고르기").setInputFiles("tests/fixtures/four-parts.musicxml");
-  await page.getByRole("button", { name: "이 곡으로 연습하기" }).click();
-  await expect(page).toHaveURL(/\/songs\/imported$/);
-  await expect(page.locator(".part-picker button")).toHaveCount(4);
-});

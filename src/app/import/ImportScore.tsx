@@ -25,7 +25,23 @@ const NEEDS_CONVERTER = /\.(mscz|mscx|mid|midi|pdf|png|jpe?g)$/i;
 
 type Status = { kind: "idle" } | { kind: "working"; message: string } | { kind: "error"; message: string };
 
-export function ImportScore({ converterUrl }: { converterUrl?: string }) {
+interface SaveInput {
+  title: string;
+  xml: string;
+  roles: Record<string, string>;
+  experimental: boolean;
+}
+
+/** With `onSave` the screen saves a draft for the admin; without it the score goes straight to practice. */
+export function ImportScore({
+  converterUrl,
+  onSave,
+}: {
+  converterUrl?: string;
+  onSave?: (song: SaveInput) => Promise<{ error?: string } | void>;
+}) {
+  const [title, setTitle] = useState("");
+  const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [result, setResult] = useState<ImportResult>();
   const [roles, setRoles] = useState<Record<string, string>>({});
@@ -53,6 +69,7 @@ export function ImportScore({ converterUrl }: { converterUrl?: string }) {
       const imported = await importScore(file, { converterUrl, signal: request.signal });
       if (!request.isCurrent()) return;
       setResult(imported);
+      setTitle(imported.model.title || file.name.replace(/\.[^.]+$/, ""));
       setRoles(imported.roles);
       setVolumes(Object.fromEntries(imported.model.parts.map((p) => [p.id, 1])));
       setStatus({ kind: "idle" });
@@ -91,6 +108,20 @@ export function ImportScore({ converterUrl }: { converterUrl?: string }) {
       return;
     }
     router.push(`/songs/${IMPORTED_ID}`);
+  }
+
+  async function save() {
+    if (!result || !onSave) return;
+    stop();
+    setSaving(true);
+    const outcome = await onSave({
+      title,
+      xml: result.xml,
+      roles,
+      experimental: result.format === "pdf" || result.format === "image",
+    });
+    setSaving(false);
+    if (outcome?.error) setStatus({ kind: "error", message: outcome.error });
   }
 
   function solo(partId: string) {
@@ -175,9 +206,11 @@ export function ImportScore({ converterUrl }: { converterUrl?: string }) {
                 <option value={1}>원래 빠르기</option>
               </select>
             </label>
-            <button type="button" onClick={practice}>
-              이 곡으로 연습하기
-            </button>
+            {!onSave && (
+              <button type="button" onClick={practice}>
+                이 곡으로 연습하기
+              </button>
+            )}
           </div>
 
           <PartList
@@ -190,6 +223,19 @@ export function ImportScore({ converterUrl }: { converterUrl?: string }) {
           />
 
           <ScoreView xml={result.xml} />
+
+          {onSave && (
+            <section className="save-bar" aria-label="저장">
+              <label>
+                <span>곡 제목</span>
+                <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} />
+              </label>
+              <button type="button" className="primary" disabled={saving || !title.trim()} onClick={save}>
+                {saving ? "저장하는 중…" : "초안으로 저장"}
+              </button>
+              <p className="hint">저장해도 단원에게는 아직 보이지 않아요. 들어 보고 확인한 뒤 공개하세요.</p>
+            </section>
+          )}
         </>
       )}
     </>

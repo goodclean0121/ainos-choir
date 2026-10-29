@@ -228,3 +228,25 @@ button:disabled { opacity: 0.45; cursor: default; }
   background: var(--paper);
   color: var(--ink);
 }
+
+/* Admin */
+.admin-nav { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; margin-bottom: 8px; border-bottom: 1px solid var(--rule); }
+.admin-nav a { display: inline-flex; align-items: center; min-height: 48px; font-weight: 600; text-decoration: none; }
+.admin-nav form { margin-left: auto; }
+.admin-songs a { justify-content: space-between; gap: 12px; }
+.song-meta { display: block; color: var(--ink-soft); font-size: 0.9rem; margin: -4px 4px 8px; }
+.badge { flex: none; font-size: 0.85rem; font-weight: 700; padding: 2px 10px; border-radius: 999px; }
+.badge-published { background: var(--tenor); color: var(--paper); }
+.badge-draft { background: var(--rule); color: var(--ink); }
+.song-controls { display: grid; gap: 12px; margin: 16px 0 24px; max-width: 560px; }
+.song-status { display: flex; gap: 10px; align-items: center; }
+.title-field, .save-bar label { display: grid; gap: 6px; font-weight: 600; }
+.title-field input, .save-bar input {
+  min-height: 52px; font: inherit; padding: 0 14px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); color: var(--ink);
+}
+.check-field { display: flex; gap: 10px; align-items: flex-start; }
+.check-field input { width: 24px; height: 24px; margin-top: 3px; accent-color: var(--accent); }
+.song-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+button.danger { color: var(--error-ink); border-color: var(--error-ink); }
+.save-bar { display: grid; gap: 10px; margin: 24px 0; max-width: 560px; }
+.preview-title { font-size: 1rem; color: var(--ink-soft); }
