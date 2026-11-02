@@ -574,3 +574,54 @@ select.dock-pill { -webkit-appearance: none; appearance: none; text-align: cente
 .song-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .save-bar { display: grid; gap: 10px; margin: 24px 0; max-width: 640px; padding: 20px; border-radius: 22px; background: var(--card); box-shadow: var(--shadow); }
 .preview-title { font-size: 1rem; color: var(--soft); margin-top: 28px; }
+
+/* ---------- Home menu ---------- */
+.home-hero { display: grid; gap: 4px; margin: 4vh 0 28px; }
+.home-hero h1 { font-size: 2.4rem; margin: 0; }
+.home-hero p { margin: 0; color: var(--soft); }
+.home-menu { display: grid; gap: 16px; }
+.menu-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 180px;
+  padding: 24px;
+  border-radius: 26px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  text-decoration: none;
+}
+.menu-name { font-family: var(--display); font-size: 1.9rem; line-height: 1.2; margin-top: auto; }
+.menu-desc { color: var(--soft); font-size: 0.95rem; }
+.menu-motif { display: flex; height: 44px; align-items: center; margin-bottom: 18px; }
+.menu-motif i { display: block; width: 40px; height: 40px; border-radius: 50%; background: var(--voice); border: 3px solid var(--card); }
+.menu-motif i + i { margin-left: -12px; }
+.menu-tag { position: absolute; top: 22px; right: 22px; padding: 2px 12px; border-radius: 999px; background: var(--sky); color: var(--soft); font-size: 0.8rem; font-weight: 700; }
+.menu-group { color: var(--soft); }
+.menu-group .menu-name { color: var(--ink); opacity: 0.6; }
+.menu-group .menu-motif { opacity: 0.55; }
+.menu-personal { background: var(--accent); color: var(--on-accent); box-shadow: 0 10px 28px rgb(15 108 140 / 0.28); }
+.menu-personal .menu-desc { color: inherit; opacity: 0.85; }
+.menu-personal .menu-motif i { width: 44px; height: 44px; border-color: var(--accent); box-shadow: 0 0 0 6px rgb(255 255 255 / 0.25); }
+.menu-go { margin-top: 14px; display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 999px; background: var(--on-accent); color: var(--accent); font-weight: 700; }
+.menu-personal:hover .menu-go, .menu-personal:focus-visible .menu-go { transform: translateX(2px); }
+.menu-empty { justify-content: center; align-items: center; background: transparent; border: 2px dashed var(--line); box-shadow: none; text-align: center; }
+.menu-plus { font-size: 2rem; color: var(--line); line-height: 1; }
+
+@media (min-width: 720px) {
+  .home-menu { grid-template-columns: 1fr 1.25fr 1fr; align-items: stretch; }
+  .menu-tile { min-height: min(52dvh, 440px); padding: 30px; }
+  .menu-personal { margin-block: -16px; }
+}
+@media (min-width: 720px) and (max-width: 1023px) and (orientation: portrait) {
+  .home-menu { grid-template-columns: 1fr 1fr; }
+  .menu-personal { grid-column: 1 / -1; grid-row: 1; min-height: 300px; margin-block: 0; }
+  .menu-tile { min-height: 240px; }
+}
+.page-home { max-width: 1180px; min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; padding-block: 32px; }
+.page-home .home-hero { margin-top: 0; }
+.list-head { display: flex; align-items: center; gap: 16px; margin: 4px 0 20px; }
+.list-head h1 { margin: 0; }
