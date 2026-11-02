@@ -38,7 +38,7 @@ export function RehearsalCalendar({
   return (
     <div className="calendar-page">
       <div className="list-head">
-        <Link href={backHref} className="back-circle" aria-label="처음 화면으로">
+        <Link href={backHref} className="back-circle" aria-label="뒤로">
           <span aria-hidden="true">←</span>
         </Link>
         <div>

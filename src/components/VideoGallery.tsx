@@ -41,7 +41,7 @@ export function VideoGallery({ videos, backHref }: { videos: Video[]; backHref: 
         <section className="video-empty">
           <span className="video-empty-mark" aria-hidden="true" />
           <h2>아직 올라온 영상이 없어요</h2>
-          <p>찬양대 공유 드라이브의 「공연 영상」 폴더에 영상을 올리면, 이 화면에 저절로 나타나요.</p>
+          <p>합창단 공유 드라이브의 「공연 영상」 폴더에 영상을 올리면, 이 화면에 저절로 나타나요.</p>
           <ol className="video-steps">
             <li>관리자가 드라이브 폴더를 한 번 연결해요</li>
             <li>누구든 그 폴더에 공연 영상을 올려요</li>

@@ -1,16 +1,22 @@
 import { StrictMode, useEffect, useState } from "react";
-import { HomeMenu } from "@/components/HomeMenu";
+import { createRoot } from "react-dom/client";
 import { GroupPractice, type PdfScore } from "@/components/GroupPractice";
 import { VideoGallery } from "@/components/VideoGallery";
-import { Homework } from "@/components/Homework";
 import { RehearsalCalendar } from "@/components/RehearsalCalendar";
-import { dayKey, nextRehearsal } from "@/schedule/calendar";
-import { sampleRehearsals } from "./schedule";
-import { createRoot } from "react-dom/client";
+import { AppShell, type TabId } from "@/components/partnote/AppShell";
+import { HomeScreen } from "@/components/partnote/HomeScreen";
+import { GOAL_TICKS_KEY, PRACTICE_LOG_KEY, ScoreScreen, type ScoreSegment } from "@/components/partnote/ScoreScreen";
+import { ScheduleScreen, type ScheduleSegment } from "@/components/partnote/ScheduleScreen";
+import { MembersScreen, type MembersSegment } from "@/components/partnote/MembersScreen";
 import { Practice } from "@/app/songs/[id]/Practice";
+import { songProgress, weekOf } from "@/practice/goals";
+import { readStored, useTicks, writeStored } from "@/practice/local";
+import { addSeconds, type PracticeLog } from "@/practice/time";
+import { dayKey, upcoming, type RehearsalSong } from "@/schedule/calendar";
 import { importScore } from "@/score/importScore";
 import type { Song } from "@/songs/loadSong";
 import demoXml from "@/server/seed/practice-example.musicxml?raw";
+import { sampleRehearsals } from "./schedule";
 import "@/app/globals.css";
 import "./standalone.css";
 
@@ -32,31 +38,52 @@ const PDFS: PdfScore[] = Object.entries(
   .sort(([a], [b]) => a.localeCompare(b))
   .map(([path, src]) => ({ id: path, title: path.replace(/^.*\/(\d+-)?|\.pdf$/g, ""), src }));
 
-const REHEARSALS = sampleRehearsals(PDFS.map((p) => p.id));
+const EVENTS = sampleRehearsals(PDFS.map((p) => p.id));
 
-const VIEWS = ["home", "songs", "play", "group", "videos", "homework", "calendar"] as const;
-type View = (typeof VIEWS)[number];
-
-/** "#group/3" opens group practice on the fourth score. */
-function readView(): View {
-  const hash = typeof location === "undefined" ? "" : location.hash.slice(1).split("/")[0];
-  return (VIEWS as readonly string[]).includes(hash) ? (hash as View) : "home";
+/** The PDF and the sounding score of one song carry slightly different titles; match on their start. */
+function sameSong(a: string, b: string): boolean {
+  const norm = (t: string) => t.toLowerCase().replace(/[\s()]/g, "");
+  const [x, y] = [norm(a), norm(b)];
+  const n = Math.min(x.length, y.length, 10);
+  return n > 0 && x.slice(0, n) === y.slice(0, n);
 }
 
-function readScoreIndex(): number | undefined {
-  const part = typeof location === "undefined" ? undefined : location.hash.split("/")[1];
-  return part === undefined ? undefined : Number(part);
+type Route = { view: string; arg?: string };
+function readRoute(): Route {
+  const [view = "", arg] = location.hash.slice(1).split("/");
+  // Older links from the earlier trial keep working.
+  if (view === "group") return { view: "pdf", arg };
+  if (view === "songs") return { view: "score", arg: "personal" };
+  if (view === "homework") return { view: "score", arg: "tasks" };
+  return { view: view || "home", arg };
 }
 
 /** A trial build of the app that runs from one file, with no server. The hash picks the screen. */
 function App() {
-  const [view, setView] = useState<View>(readView);
-  const [song, setSong] = useState<{ id: string; song: Song }>(SONGS[0]);
-  const [error, setError] = useState<string>();
+  const [route, setRoute] = useState<Route>(readRoute);
   const [pdfs, setPdfs] = useState(PDFS);
-  const [scoreIndex, setScoreIndex] = useState(readScoreIndex);
+  const [openedFile, setOpenedFile] = useState<{ id: string; song: Song }>();
+  const [error, setError] = useState<string>();
+  const [ticks] = useTicks(GOAL_TICKS_KEY);
+  const today = dayKey(new Date());
 
-  // The trial keeps added scores only until the page is closed; the real app will save them.
+  useEffect(() => {
+    const onHash = () => setRoute(readRoute());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  // Time spent in practice mode adds up, on this device, toward the week's practice time.
+  useEffect(() => {
+    if (route.view !== "play") return;
+    const started = Date.now();
+    return () => {
+      const seconds = Math.round((Date.now() - started) / 1000);
+      if (seconds < 5) return;
+      writeStored(PRACTICE_LOG_KEY, addSeconds(readStored<PracticeLog>(PRACTICE_LOG_KEY, {}), dayKey(new Date()), seconds));
+    };
+  }, [route.view]);
+
   async function addPdf(file: File): Promise<PdfScore> {
     if (file.type && file.type !== "application/pdf") throw new Error("PDF 파일만 추가할 수 있어요");
     const src = await new Promise<string>((resolve, reject) => {
@@ -70,142 +97,147 @@ function App() {
     return score;
   }
 
-  useEffect(() => {
-    const onHash = () => {
-      setView(readView());
-      setScoreIndex(readScoreIndex());
-    };
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
-  }, []);
-
-  function play(next: { id: string; song: Song }) {
-    setSong(next);
-    window.location.assign("#play");
-  }
-
-  async function open(file: File) {
+  async function openFile(file: File) {
     setError(undefined);
     try {
       const imported = await importScore(file);
-      play({
+      setOpenedFile({
         id: `file-${file.name}-${file.lastModified}`,
         song: { title: file.name.replace(/\.[^.]+$/, ""), xml: imported.xml, roles: imported.roles },
       });
+      window.location.assign("#play/file");
     } catch (e) {
       setError(e instanceof Error ? e.message : "악보를 열지 못했어요");
     }
   }
 
-  if (view === "play") {
-    return (
-      <main className="page page-practice">
-        <Practice key={song.id} songId={song.id} song={song.song} backHref="#songs" />
-      </main>
-    );
-  }
+  const pdfHref = (song: RehearsalSong) => {
+    const i = pdfs.findIndex((p) => p.id === song.scoreId);
+    return i >= 0 ? `#pdf/${i}` : undefined;
+  };
+  const practices = upcoming(EVENTS, today, "practice");
+  const performance = upcoming(EVENTS, today, "performance")[0];
+  const week = weekOf(today);
+  const weekSongTitles = [...new Set(practices[0]?.songs.map((s) => s.title) ?? [])];
 
-  if (view === "group") {
+  // Full-screen views: the score itself gets the whole screen, with no tab bar.
+  if (route.view === "pdf") {
     return (
       <main className="page page-practice">
         <GroupPractice
-          key={scoreIndex ?? "list"}
+          key={route.arg ?? "list"}
           scores={pdfs}
-          backHref="#"
+          backHref="#score/group"
           onAdd={addPdf}
-          initialId={scoreIndex === undefined ? undefined : pdfs[scoreIndex]?.id}
+          initialId={route.arg === undefined ? undefined : pdfs[Number(route.arg)]?.id}
         />
       </main>
     );
   }
-
-  if (view === "videos") {
+  if (route.view === "play") {
+    const picked = route.arg === "file" ? openedFile : SONGS[Number(route.arg ?? 0)];
+    const song = picked ?? SONGS[0];
     return (
-      <main className="page page-wide">
-        <VideoGallery videos={[]} backHref="#" />
+      <main className="page page-practice">
+        <Practice key={song.id} songId={song.id} song={song.song} backHref="#score/personal" />
       </main>
     );
   }
 
-  if (view === "calendar") {
-    return (
-      <main className="page page-wide page-calendar">
-        <RehearsalCalendar
-          rehearsals={REHEARSALS}
-          backHref="#"
-          scoreHref={(song) => {
-            const i = pdfs.findIndex((p) => p.id === song.scoreId);
-            return i >= 0 ? `#group/${i}` : undefined;
-          }}
-          notice="체험판이라 예시 일정을 넣어 뒀어요. 실제 앱에서는 관리자가 일정을 올려요."
+  let tab: TabId = "home";
+  let body: React.ReactNode;
+  if (route.view === "score") {
+    tab = "score";
+    const segment = (["group", "personal", "tasks"].includes(route.arg ?? "") ? route.arg : "group") as ScoreSegment;
+    const inPractice = new Set(practices[0]?.songs.map((s) => s.scoreId));
+    body = (
+      <>
+        <ScoreScreen
+          segment={segment}
+          segmentHref={(s) => `#score/${s}`}
+          today={today}
+          scores={pdfs.map((p, i) => {
+            const listen = SONGS.findIndex((s) => sameSong(s.song.title, p.title));
+            return {
+              id: p.id,
+              title: p.title,
+              openHref: `#pdf/${i}`,
+              listenHref: listen >= 0 ? `#play/${listen}` : undefined,
+              memos: 0,
+              inThisPractice: inPractice.has(p.id),
+            };
+          })}
+          weekSongs={weekSongTitles}
+          playable={SONGS.map((s, i) => ({ id: s.id, title: s.song.title, href: `#play/${i}` }))}
+          onAddScore={(file) => void addPdf(file)}
+          onOpenFile={(file) => void openFile(file)}
         />
-      </main>
+        {error && <p className="notice notice-error screen-notice">{error}</p>}
+      </>
     );
-  }
-
-  if (view === "homework") {
-    return (
-      <main className="page">
-        <Homework backHref="#" />
-      </main>
-    );
-  }
-
-  if (view === "songs") {
-    return (
-      <main className="page">
-        <div className="list-head">
-          <a href="#" className="back-circle" aria-label="처음 화면으로">
-            <span aria-hidden="true">←</span>
-          </a>
-          <div>
-            <span className="mode-label">개인연습</span>
-            <h1>곡 고르기</h1>
-          </div>
-        </div>
-        <ul className="songs">
-          {SONGS.map((x) => (
-            <li key={x.id}>
-              <a
-                href="#play"
-                onClick={(e) => {
-                  e.preventDefault();
-                  play(x);
-                }}
-              >
-                {x.song.title}
-              </a>
-            </li>
-          ))}
-        </ul>
-        <label className="trial-open">
-          <span>내 컴퓨터의 악보 열기 (MusicXML)</span>
-          <input
-            type="file"
-            accept=".musicxml,.xml,.mxl"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void open(file);
-              e.target.value = "";
-            }}
+  } else if (route.view === "schedule" || route.view === "calendar" || route.view === "videos") {
+    tab = "schedule";
+    if (route.view === "calendar") {
+      body = (
+        <div className="screen">
+          <RehearsalCalendar
+            rehearsals={EVENTS}
+            backHref="#schedule"
+            scoreHref={pdfHref}
+            notice="체험판이라 예시 일정을 넣어 뒀어요. 실제 앱에서는 관리자가 일정을 올려요."
           />
-        </label>
-        {error && <p className="notice notice-error">{error}</p>}
-      </main>
+        </div>
+      );
+    } else if (route.view === "videos") {
+      body = (
+        <div className="screen">
+          <VideoGallery videos={[]} backHref="#schedule/sunday" />
+        </div>
+      );
+    } else {
+      body = (
+        <ScheduleScreen
+          segment={route.arg === "sunday" ? "sunday" : ("wednesday" as ScheduleSegment)}
+          segmentHref={(s) => `#schedule/${s}`}
+          today={today}
+          practices={practices}
+          performance={performance}
+          scoreHref={pdfHref}
+          calendarHref="#calendar"
+          videosHref="#videos"
+        />
+      );
+    }
+  } else if (route.view === "members") {
+    tab = "members";
+    const segment = (["notices", "people", "votes"].includes(route.arg ?? "") ? route.arg : "notices") as MembersSegment;
+    body = <MembersScreen segment={segment} segmentHref={(s) => `#members/${s}`} />;
+  } else {
+    body = (
+      <HomeScreen
+        choirName="아이노스 합창단"
+        today={today}
+        performance={performance}
+        practices={practices}
+        weekSongs={(practices[0]?.songs ?? []).map((s) => ({
+          title: s.title,
+          detail: s.note,
+          progress: songProgress(ticks, week, s.title),
+          href: pdfHref(s) ?? "#score/group",
+        }))}
+        scheduleHref="#schedule/sunday"
+        practiceHref="#score/personal"
+      />
     );
   }
 
   return (
-    <main className="page page-wide page-home">
-      <header className="home-hero">
-        <h1>파트노트</h1>
-        <p>아이노스 찬양대</p>
-      </header>
-      <HomeMenu
-        links={{ group: "#group", personal: "#songs", videos: "#videos", homework: "#homework", calendar: "#calendar" }}
-        next={nextRehearsal(REHEARSALS, dayKey(new Date()))}
-      />
-    </main>
+    <AppShell
+      tab={tab}
+      links={{ home: "#home", score: "#score/group", schedule: "#schedule/wednesday", members: "#members/notices" }}
+    >
+      {body}
+    </AppShell>
   );
 }
 

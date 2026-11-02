@@ -41,7 +41,7 @@ export function HomeMenu({ links, next }: { links: HomeLinks; next?: Rehearsal }
         </span>
       ),
     },
-    { href: links.videos, name: "공연 영상", desc: "우리 찬양대 공연을 다시 봐요", mark: <span className="menu-icon menu-icon-play" /> },
+    { href: links.videos, name: "공연 영상", desc: "우리 합창단 공연을 다시 봐요", mark: <span className="menu-icon menu-icon-play" /> },
     { href: links.homework, name: "숙제", desc: "이번 주 연습할 것", mark: <span className="menu-icon menu-icon-check" /> },
   ];
 
