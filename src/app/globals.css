@@ -579,14 +579,15 @@ select.dock-pill { -webkit-appearance: none; appearance: none; text-align: cente
 .home-hero { display: grid; gap: 4px; margin: 4vh 0 28px; }
 .home-hero h1 { font-size: 2.4rem; margin: 0; }
 .home-hero p { margin: 0; color: var(--soft); }
-.home-menu { display: grid; gap: 16px; }
+.home-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .menu-tile {
   position: relative;
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
-  min-height: 180px;
+  min-height: 200px;
   padding: 24px;
   border-radius: 26px;
   background: var(--card);
@@ -599,29 +600,164 @@ select.dock-pill { -webkit-appearance: none; appearance: none; text-align: cente
 .menu-motif { display: flex; height: 44px; align-items: center; margin-bottom: 18px; }
 .menu-motif i { display: block; width: 40px; height: 40px; border-radius: 50%; background: var(--voice); border: 3px solid var(--card); }
 .menu-motif i + i { margin-left: -12px; }
-.menu-tag { position: absolute; top: 22px; right: 22px; padding: 2px 12px; border-radius: 999px; background: var(--sky); color: var(--soft); font-size: 0.8rem; font-weight: 700; }
-.menu-group { color: var(--soft); }
-.menu-group .menu-name { color: var(--ink); opacity: 0.6; }
-.menu-group .menu-motif { opacity: 0.55; }
+.menu-go { margin-top: 14px; display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 999px; background: var(--sky); color: var(--accent); font-weight: 700; }
+.menu-tile:hover .menu-go, .menu-tile:focus-visible .menu-go { transform: translateX(2px); }
 .menu-personal { background: var(--accent); color: var(--on-accent); box-shadow: 0 10px 28px rgb(15 108 140 / 0.28); }
 .menu-personal .menu-desc { color: inherit; opacity: 0.85; }
 .menu-personal .menu-motif i { width: 44px; height: 44px; border-color: var(--accent); box-shadow: 0 0 0 6px rgb(255 255 255 / 0.25); }
-.menu-go { margin-top: 14px; display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 999px; background: var(--on-accent); color: var(--accent); font-weight: 700; }
-.menu-personal:hover .menu-go, .menu-personal:focus-visible .menu-go { transform: translateX(2px); }
-.menu-empty { justify-content: center; align-items: center; background: transparent; border: 2px dashed var(--line); box-shadow: none; text-align: center; }
-.menu-plus { font-size: 2rem; color: var(--line); line-height: 1; }
+.menu-personal .menu-go { background: var(--on-accent); }
+
+/* Videos and homework: shorter tiles with a drawn mark instead of the voice dots. */
+.menu-small { grid-column: auto; min-height: 150px; padding: 20px; }
+.menu-small .menu-name { font-size: 1.45rem; }
+.menu-small .menu-desc { font-size: 0.88rem; }
+.menu-icon { position: relative; flex: none; width: 46px; height: 46px; border-radius: 15px; margin-bottom: 14px; }
+.menu-icon-play { background: var(--soprano-l); }
+.menu-icon-play::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  top: 14px;
+  border-left: 15px solid var(--soprano);
+  border-block: 9px solid transparent;
+}
+.menu-icon-check { background: var(--tenor-l); }
+.menu-icon-check::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 11px;
+  width: 10px;
+  height: 18px;
+  border: solid var(--tenor);
+  border-width: 0 4px 4px 0;
+  border-radius: 1px;
+  transform: rotate(40deg);
+}
 
 @media (min-width: 720px) {
-  .home-menu { grid-template-columns: 1fr 1.25fr 1fr; align-items: stretch; }
-  .menu-tile { min-height: min(52dvh, 440px); padding: 30px; }
-  .menu-personal { margin-block: -16px; }
-}
-@media (min-width: 720px) and (max-width: 1023px) and (orientation: portrait) {
-  .home-menu { grid-template-columns: 1fr 1fr; }
-  .menu-personal { grid-column: 1 / -1; grid-row: 1; min-height: 300px; margin-block: 0; }
-  .menu-tile { min-height: 240px; }
+  .home-menu { gap: 18px; }
+  .menu-tile { grid-column: auto; min-height: min(40dvh, 340px); padding: 30px; }
+  .menu-small { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 18px; min-height: 0; padding: 22px 26px; }
+  .menu-small .menu-icon { margin: 0; width: 56px; height: 56px; border-radius: 18px; }
+  .menu-small .menu-icon-play::after { left: 22px; top: 18px; border-left-width: 17px; border-block-width: 10px; }
+  .menu-small .menu-icon-check::after { left: 21px; top: 14px; width: 11px; height: 21px; }
+  .menu-small .menu-name { margin: 0; }
+  .menu-small .menu-desc { flex-basis: 100%; padding-left: 74px; margin-top: -6px; }
 }
 .page-home { max-width: 1180px; min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; padding-block: 32px; }
 .page-home .home-hero { margin-top: 0; }
 .list-head { display: flex; align-items: center; gap: 16px; margin: 4px 0 20px; }
 .list-head h1 { margin: 0; }
+
+/* ---------- Group practice: the printed score, nothing else ---------- */
+.group-practice { display: flex; flex-direction: column; height: calc(100dvh - 36px); min-height: 480px; }
+.group-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.list-toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 18px 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  font-weight: 700;
+}
+.list-toggle[aria-expanded="true"] { background: var(--accent); color: var(--on-accent); }
+.list-icon { display: grid; gap: 3px; width: 18px; }
+.list-icon i { display: block; height: 2.5px; border-radius: 2px; background: currentColor; }
+.list-icon i:nth-child(2) { width: 75%; }
+.pdf-card { padding-bottom: 0; background: #f4f7f9; }
+.score.pdf-pages > .pdf-page { display: flex; align-items: center; justify-content: center; gap: 24px; overflow: auto; }
+.pdf-page canvas { display: block; flex: none; margin: auto 0; background: #fff; box-shadow: 0 1px 6px rgb(23 48 64 / 0.16); }
+/* The page gets the whole card; page count and size float over the bottom margin. */
+.pdf-score .score-toolbar {
+  position: absolute;
+  z-index: 3;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-wrap: nowrap;
+  gap: 12px;
+  padding: 4px 4px 4px 18px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.94);
+  box-shadow: 0 6px 20px rgb(23 48 64 / 0.18);
+  white-space: nowrap;
+}
+.pdf-score .pager-count { display: inline; }
+.pdf-status { position: absolute; inset: 50% 0 auto; text-align: center; color: var(--soft); }
+.pdf-status.notice { inset: 40% 24px auto; }
+
+.drawer-scrim { position: fixed; inset: 0; z-index: 20; background: rgb(23 48 64 / 0.28); }
+.score-drawer {
+  position: fixed;
+  z-index: 21;
+  top: 12px;
+  bottom: 12px;
+  left: 12px;
+  width: min(340px, calc(100vw - 48px));
+  padding: 20px 12px;
+  overflow-y: auto;
+  border-radius: 24px;
+  background: var(--card);
+  box-shadow: 0 18px 48px rgb(23 48 64 / 0.25);
+}
+.score-drawer[hidden] { display: none; }
+.drawer-title { margin: 0 10px 12px; font-family: var(--display); font-size: 1.3rem; }
+.score-drawer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.score-drawer li button {
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  font-size: 1rem;
+}
+.score-drawer li button:hover { background: var(--sky); }
+.score-drawer li button[aria-current="true"] { background: var(--sky); color: var(--accent); font-weight: 700; box-shadow: inset 4px 0 0 var(--accent); }
+@media (max-width: 599px) {
+  .group-head { gap: 8px; }
+  .list-toggle { padding: 0 14px 0 12px; }
+  .group-head .practice-title h1 { font-size: 1.15rem; }
+}
+
+/* ---------- Videos and homework ---------- */
+.video-empty, .homework-empty {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  max-width: 560px;
+  margin: 6vh auto 0;
+  padding: 40px 28px;
+  border-radius: 26px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.video-empty h2, .homework-empty h2 { margin: 6px 0 0; font-size: 1.35rem; }
+.video-empty p, .homework-empty p { margin: 0; color: var(--soft); line-height: 1.6; }
+.video-empty-mark, .homework-mark { position: relative; width: 72px; height: 72px; border-radius: 22px; }
+.video-empty-mark { background: var(--soprano-l); }
+.video-empty-mark::after { content: ""; position: absolute; left: 28px; top: 22px; border-left: 22px solid var(--soprano); border-block: 14px solid transparent; }
+.homework-mark { background: var(--tenor-l); }
+.homework-mark::after { content: ""; position: absolute; left: 26px; top: 16px; width: 15px; height: 28px; border: solid var(--tenor); border-width: 0 6px 6px 0; transform: rotate(40deg); }
+.video-steps { margin: 14px 0 0; padding: 18px 18px 18px 40px; border-radius: 18px; background: var(--sky); text-align: left; display: grid; gap: 8px; line-height: 1.5; }
+.video-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+.video-card { display: grid; gap: 6px; width: 100%; padding: 0; border: 0; background: none; color: var(--ink); text-align: left; }
+.video-thumb { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 18px; overflow: hidden; background: var(--dock); }
+.video-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.video-duration { position: absolute; right: 10px; bottom: 10px; padding: 2px 8px; border-radius: 8px; background: rgb(0 0 0 / 0.7); color: #fff; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.video-title { font-weight: 700; padding-inline: 4px; }
+.video-date { color: var(--soft); font-size: 0.85rem; padding-inline: 4px; }
+.video-player { margin-bottom: 24px; border-radius: 22px; overflow: hidden; background: var(--card); box-shadow: var(--shadow); }
+.video-player iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; background: #000; }
+.video-player-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px 10px 20px; }
+.video-player-bar h2 { margin: 0; font-size: 1.1rem; }

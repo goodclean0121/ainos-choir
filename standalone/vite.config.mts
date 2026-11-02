@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: "next/link", replacement: fileURLToPath(new URL("./link.tsx", import.meta.url)) },
+      { find: "@/pdf/worker", replacement: fileURLToPath(new URL("./pdfWorker.ts", import.meta.url)) },
       { find: /^@\//, replacement: src + "/" },
     ],
   },

@@ -1,5 +1,8 @@
 import { StrictMode, useEffect, useState } from "react";
 import { HomeMenu } from "@/components/HomeMenu";
+import { GroupPractice, type PdfScore } from "@/components/GroupPractice";
+import { VideoGallery } from "@/components/VideoGallery";
+import { Homework } from "@/components/Homework";
 import { createRoot } from "react-dom/client";
 import { Practice } from "@/app/songs/[id]/Practice";
 import { importScore } from "@/score/importScore";
@@ -19,11 +22,19 @@ const BUNDLED = Object.entries(
 });
 const SONGS = [...BUNDLED, { id: "demo", song: DEMO }];
 
-type View = "home" | "songs" | "play";
+// PDF scores for group practice, from standalone/pdfs/ (also kept out of git). "1-Title.pdf" sorts first.
+const PDFS: PdfScore[] = Object.entries(
+  import.meta.glob<string>("./pdfs/*.pdf", { query: "?url", import: "default", eager: true }),
+)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([path, src]) => ({ id: path, title: path.replace(/^.*\/(\d+-)?|\.pdf$/g, ""), src }));
+
+const VIEWS = ["home", "songs", "play", "group", "videos", "homework"] as const;
+type View = (typeof VIEWS)[number];
 
 function readView(): View {
   const hash = typeof location === "undefined" ? "" : location.hash.slice(1);
-  return hash === "songs" || hash === "play" ? hash : "home";
+  return (VIEWS as readonly string[]).includes(hash) ? (hash as View) : "home";
 }
 
 /** A trial build of the app that runs from one file, with no server. The hash picks the screen. */
@@ -60,6 +71,30 @@ function App() {
     return (
       <main className="page page-practice">
         <Practice key={song.id} songId={song.id} song={song.song} backHref="#songs" />
+      </main>
+    );
+  }
+
+  if (view === "group") {
+    return (
+      <main className="page page-practice">
+        <GroupPractice scores={PDFS} backHref="#" />
+      </main>
+    );
+  }
+
+  if (view === "videos") {
+    return (
+      <main className="page page-wide">
+        <VideoGallery videos={[]} backHref="#" />
+      </main>
+    );
+  }
+
+  if (view === "homework") {
+    return (
+      <main className="page">
+        <Homework backHref="#" />
       </main>
     );
   }
@@ -114,7 +149,7 @@ function App() {
         <h1>아이노스 찬양연습</h1>
         <p>오늘은 어떻게 연습할까요?</p>
       </header>
-      <HomeMenu personalHref="#songs" />
+      <HomeMenu links={{ group: "#group", personal: "#songs", videos: "#videos", homework: "#homework" }} />
     </main>
   );
 }
