@@ -674,18 +674,30 @@ select.dock-pill { -webkit-appearance: none; appearance: none; text-align: cente
 .pdf-card { padding-bottom: 0; background: #f4f7f9; }
 .score.pdf-pages > .pdf-page { display: flex; align-items: center; justify-content: center; gap: 24px; overflow: auto; }
 .pdf-page canvas { display: block; flex: none; margin: auto 0; background: #fff; box-shadow: 0 1px 6px rgb(23 48 64 / 0.16); }
-/* The page gets the whole card; page count and size float over the bottom margin. */
+/* The page gets the whole card. Page count and size hide behind a small button at the bottom left. */
+.pdf-tools { position: absolute; z-index: 3; left: 14px; bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.pdf-tools-toggle {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: 0 4px 14px rgb(23 48 64 / 0.18);
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.pdf-tools.open .pdf-tools-toggle { background: var(--dock); color: var(--dock-ink); font-size: 1.4rem; }
 .pdf-score .score-toolbar {
-  position: absolute;
-  z-index: 3;
-  bottom: 14px;
-  left: 50%;
-  transform: translateX(-50%);
   flex-wrap: nowrap;
   gap: 12px;
   padding: 4px 4px 4px 18px;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.94);
+  background: rgb(255 255 255 / 0.95);
   box-shadow: 0 6px 20px rgb(23 48 64 / 0.18);
   white-space: nowrap;
 }
