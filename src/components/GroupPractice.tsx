@@ -20,12 +20,14 @@ export function GroupPractice({
   scores,
   backHref,
   onAdd,
+  initialId,
 }: {
   scores: PdfScore[];
   backHref: string;
   onAdd?: (file: File) => Promise<PdfScore>;
+  initialId?: string;
 }) {
-  const [current, setCurrent] = useState(scores[0]);
+  const [current, setCurrent] = useState(scores.find((s) => s.id === initialId) ?? scores[0]);
   const [listOpen, setListOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [addError, setAddError] = useState<string>();

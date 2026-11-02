@@ -3,6 +3,9 @@ import { HomeMenu } from "@/components/HomeMenu";
 import { GroupPractice, type PdfScore } from "@/components/GroupPractice";
 import { VideoGallery } from "@/components/VideoGallery";
 import { Homework } from "@/components/Homework";
+import { RehearsalCalendar } from "@/components/RehearsalCalendar";
+import { dayKey, nextRehearsal } from "@/schedule/calendar";
+import { sampleRehearsals } from "./schedule";
 import { createRoot } from "react-dom/client";
 import { Practice } from "@/app/songs/[id]/Practice";
 import { importScore } from "@/score/importScore";
@@ -29,12 +32,20 @@ const PDFS: PdfScore[] = Object.entries(
   .sort(([a], [b]) => a.localeCompare(b))
   .map(([path, src]) => ({ id: path, title: path.replace(/^.*\/(\d+-)?|\.pdf$/g, ""), src }));
 
-const VIEWS = ["home", "songs", "play", "group", "videos", "homework"] as const;
+const REHEARSALS = sampleRehearsals(PDFS.map((p) => p.id));
+
+const VIEWS = ["home", "songs", "play", "group", "videos", "homework", "calendar"] as const;
 type View = (typeof VIEWS)[number];
 
+/** "#group/3" opens group practice on the fourth score. */
 function readView(): View {
-  const hash = typeof location === "undefined" ? "" : location.hash.slice(1);
+  const hash = typeof location === "undefined" ? "" : location.hash.slice(1).split("/")[0];
   return (VIEWS as readonly string[]).includes(hash) ? (hash as View) : "home";
+}
+
+function readScoreIndex(): number | undefined {
+  const part = typeof location === "undefined" ? undefined : location.hash.split("/")[1];
+  return part === undefined ? undefined : Number(part);
 }
 
 /** A trial build of the app that runs from one file, with no server. The hash picks the screen. */
@@ -43,6 +54,7 @@ function App() {
   const [song, setSong] = useState<{ id: string; song: Song }>(SONGS[0]);
   const [error, setError] = useState<string>();
   const [pdfs, setPdfs] = useState(PDFS);
+  const [scoreIndex, setScoreIndex] = useState(readScoreIndex);
 
   // The trial keeps added scores only until the page is closed; the real app will save them.
   async function addPdf(file: File): Promise<PdfScore> {
@@ -59,7 +71,10 @@ function App() {
   }
 
   useEffect(() => {
-    const onHash = () => setView(readView());
+    const onHash = () => {
+      setView(readView());
+      setScoreIndex(readScoreIndex());
+    };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
@@ -93,7 +108,13 @@ function App() {
   if (view === "group") {
     return (
       <main className="page page-practice">
-        <GroupPractice scores={pdfs} backHref="#" onAdd={addPdf} />
+        <GroupPractice
+          key={scoreIndex ?? "list"}
+          scores={pdfs}
+          backHref="#"
+          onAdd={addPdf}
+          initialId={scoreIndex === undefined ? undefined : pdfs[scoreIndex]?.id}
+        />
       </main>
     );
   }
@@ -102,6 +123,22 @@ function App() {
     return (
       <main className="page page-wide">
         <VideoGallery videos={[]} backHref="#" />
+      </main>
+    );
+  }
+
+  if (view === "calendar") {
+    return (
+      <main className="page page-wide page-calendar">
+        <RehearsalCalendar
+          rehearsals={REHEARSALS}
+          backHref="#"
+          scoreHref={(song) => {
+            const i = pdfs.findIndex((p) => p.id === song.scoreId);
+            return i >= 0 ? `#group/${i}` : undefined;
+          }}
+          notice="체험판이라 예시 일정을 넣어 뒀어요. 실제 앱에서는 관리자가 일정을 올려요."
+        />
       </main>
     );
   }
@@ -161,10 +198,13 @@ function App() {
   return (
     <main className="page page-wide page-home">
       <header className="home-hero">
-        <h1>아이노스 찬양연습</h1>
-        <p>오늘은 어떻게 연습할까요?</p>
+        <h1>파트노트</h1>
+        <p>아이노스 찬양대</p>
       </header>
-      <HomeMenu links={{ group: "#group", personal: "#songs", videos: "#videos", homework: "#homework" }} />
+      <HomeMenu
+        links={{ group: "#group", personal: "#songs", videos: "#videos", homework: "#homework", calendar: "#calendar" }}
+        next={nextRehearsal(REHEARSALS, dayKey(new Date()))}
+      />
     </main>
   );
 }

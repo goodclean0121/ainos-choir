@@ -21,7 +21,7 @@ async function SongList() {
 export default function Home() {
   return (
     <main className="page">
-      <h1>아이노스 찬양연습</h1>
+      <h1>파트노트</h1>
       <p className="lead">곡을 고르고 내 파트를 정하면, 내 음만 진하게 보면서 따라 부를 수 있어요.</p>
       <Suspense fallback={<p role="status">곡 목록을 불러오고 있어요…</p>}>
         <SongList />

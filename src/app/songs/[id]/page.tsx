@@ -6,7 +6,7 @@ import { getServerStore } from "@/server/store";
 import { IMPORTED_ID } from "@/songs/loadSong";
 import { Practice } from "./Practice";
 
-export const metadata: Metadata = { title: "연습하기 - 아이노스 찬양연습" };
+export const metadata: Metadata = { title: "연습하기 - 파트노트" };
 
 async function Song({ params }: { params: Promise<{ id: string }> }) {
   const id = decodeURIComponent((await params).id);

@@ -5,7 +5,7 @@ import { requireAdmin } from "@/server/requireAdmin";
 import { AdminNav } from "../AdminShell";
 import { PasscodeForm } from "./PasscodeForm";
 
-export const metadata: Metadata = { title: "합창단 암호 - 아이노스 찬양연습" };
+export const metadata: Metadata = { title: "합창단 암호 - 파트노트" };
 
 async function Settings() {
   const admin = await requireAdmin();

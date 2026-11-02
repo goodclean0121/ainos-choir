@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LoginForm } from "./LoginForm";
 
-export const metadata: Metadata = { title: "관리자 로그인 - 아이노스 찬양연습" };
+export const metadata: Metadata = { title: "관리자 로그인 - 파트노트" };
 
 export default function AdminLogin() {
   return (

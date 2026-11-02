@@ -5,7 +5,7 @@ import { getAdminStore } from "@/server/admin";
 import { requireAdmin } from "@/server/requireAdmin";
 import { AdminNav } from "./AdminShell";
 
-export const metadata: Metadata = { title: "곡 관리 - 아이노스 찬양연습" };
+export const metadata: Metadata = { title: "곡 관리 - 파트노트" };
 
 const dateFormat = new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric" });
 

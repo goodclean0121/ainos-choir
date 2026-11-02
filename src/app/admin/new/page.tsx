@@ -5,7 +5,7 @@ import { AdminNav } from "../AdminShell";
 import { saveDraft } from "../actions";
 import { ImportScore } from "../../import/ImportScore";
 
-export const metadata: Metadata = { title: "새 곡 올리기 - 아이노스 찬양연습" };
+export const metadata: Metadata = { title: "새 곡 올리기 - 파트노트" };
 
 async function NewSong() {
   const admin = await requireAdmin();

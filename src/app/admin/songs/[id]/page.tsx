@@ -6,7 +6,7 @@ import { Practice } from "../../../songs/[id]/Practice";
 import { AdminNav } from "../../AdminShell";
 import { SongControls } from "./SongControls";
 
-export const metadata: Metadata = { title: "곡 확인 - 아이노스 찬양연습" };
+export const metadata: Metadata = { title: "곡 확인 - 파트노트" };
 
 async function AdminSong({ params }: { params: Promise<{ id: string }> }) {
   const admin = await requireAdmin();

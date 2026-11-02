@@ -7,7 +7,7 @@ const body = Gothic_A1({ weight: ["400", "600", "800"], variable: "--font-body",
 const display = Gowun_Dodum({ weight: "400", variable: "--font-display", preload: false, display: "swap" });
 
 export const metadata: Metadata = {
-  title: "아이노스 찬양연습",
+  title: "파트노트",
   description: "아이노스 합창단 파트 연습",
 };
 
