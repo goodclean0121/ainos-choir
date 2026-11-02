@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "npm run build:trial && node standalone/publish.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

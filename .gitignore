@@ -47,3 +47,6 @@ next-env.d.ts
 /standalone/dist
 /standalone/songs
 /standalone/pdfs
+
+# built trial, copied in by `npm run prebuild`
+/public/trial/
