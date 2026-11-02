@@ -69,7 +69,12 @@ html, body {
   line-height: 1.6;
   word-break: keep-all;
   -webkit-tap-highlight-color: transparent;
+  /* Feel like an app, not a web page: no rubber-band bounce, no double-tap zoom. */
+  overscroll-behavior: none;
+  touch-action: manipulation;
 }
+/* Screens built to fill exactly one screen never scroll as a whole. */
+html:has(.page-practice), html:has(.page-practice) body { height: 100%; overflow: hidden; }
 
 h1 { font-family: var(--display); font-weight: 400; font-size: 1.9rem; line-height: 1.25; margin: 0.5rem 0 0.25rem; }
 h2 { font-size: 1.25rem; line-height: 1.3; margin: 0 0 0.25rem; }
@@ -575,78 +580,76 @@ select.dock-pill { -webkit-appearance: none; appearance: none; text-align: cente
 .save-bar { display: grid; gap: 10px; margin: 24px 0; max-width: 640px; padding: 20px; border-radius: 22px; background: var(--card); box-shadow: var(--shadow); }
 .preview-title { font-size: 1rem; color: var(--soft); margin-top: 28px; }
 
-/* ---------- Home menu ---------- */
-.home-hero { display: grid; gap: 4px; margin: 4vh 0 28px; }
-.home-hero h1 { font-size: 2.4rem; margin: 0; }
+/* ---------- Home menu: four wide cards stacked top to bottom, filling one screen ---------- */
+.home-hero { display: grid; gap: 2px; margin: 0 0 20px; }
+.home-hero h1 { font-size: 2.2rem; margin: 0; }
 .home-hero p { margin: 0; color: var(--soft); }
-.home-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.home-menu { flex: 1; min-height: 0; display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .menu-tile {
   position: relative;
-  grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  min-height: 200px;
-  padding: 24px;
-  border-radius: 26px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "mark name go" "mark desc go";
+  align-content: center;
+  align-items: center;
+  column-gap: 20px;
+  min-height: 0;
+  padding: 16px 24px;
+  border-radius: 24px;
   background: var(--card);
   box-shadow: var(--shadow);
   color: var(--ink);
   text-decoration: none;
 }
-.menu-name { font-family: var(--display); font-size: 1.9rem; line-height: 1.2; margin-top: auto; }
-.menu-desc { color: var(--soft); font-size: 0.95rem; }
-.menu-motif { display: flex; height: 44px; align-items: center; margin-bottom: 18px; }
-.menu-motif i { display: block; width: 40px; height: 40px; border-radius: 50%; background: var(--voice); border: 3px solid var(--card); }
-.menu-motif i + i { margin-left: -12px; }
-.menu-go { margin-top: 14px; display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 999px; background: var(--sky); color: var(--accent); font-weight: 700; }
-.menu-tile:hover .menu-go, .menu-tile:focus-visible .menu-go { transform: translateX(2px); }
-.menu-personal { background: var(--accent); color: var(--on-accent); box-shadow: 0 10px 28px rgb(15 108 140 / 0.28); }
-.menu-personal .menu-desc { color: inherit; opacity: 0.85; }
-.menu-personal .menu-motif i { width: 44px; height: 44px; border-color: var(--accent); box-shadow: 0 0 0 6px rgb(255 255 255 / 0.25); }
-.menu-personal .menu-go { background: var(--on-accent); }
-
-/* Videos and homework: shorter tiles with a drawn mark instead of the voice dots. */
-.menu-small { grid-column: auto; min-height: 150px; padding: 20px; }
-.menu-small .menu-name { font-size: 1.45rem; }
-.menu-small .menu-desc { font-size: 0.88rem; }
-.menu-icon { position: relative; flex: none; width: 46px; height: 46px; border-radius: 15px; margin-bottom: 14px; }
-.menu-icon-play { background: var(--soprano-l); }
-.menu-icon-play::after {
-  content: "";
-  position: absolute;
-  left: 18px;
-  top: 14px;
-  border-left: 15px solid var(--soprano);
-  border-block: 9px solid transparent;
+.menu-mark { grid-area: mark; display: flex; align-items: center; justify-content: center; width: 72px; height: 56px; }
+.menu-name { grid-area: name; align-self: end; font-family: var(--display); font-size: 1.6rem; line-height: 1.2; }
+.menu-desc { grid-area: desc; align-self: start; color: var(--soft); font-size: 0.92rem; }
+.menu-go {
+  grid-area: go;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--sky);
+  color: var(--accent);
+  font-size: 1.3rem;
+  font-weight: 700;
 }
+.menu-tile:hover .menu-go, .menu-tile:focus-visible .menu-go { transform: translateX(2px); }
+.menu-motif { display: flex; align-items: center; }
+.menu-motif i { display: block; width: 30px; height: 30px; border-radius: 50%; background: var(--voice); border: 3px solid var(--card); }
+.menu-motif i + i { margin-left: -10px; }
+.menu-personal { background: var(--accent); color: var(--on-accent); box-shadow: 0 8px 24px rgb(15 108 140 / 0.26); }
+.menu-personal .menu-desc { color: inherit; opacity: 0.85; }
+.menu-personal .menu-motif i { width: 38px; height: 38px; border-color: var(--accent); box-shadow: 0 0 0 5px rgb(255 255 255 / 0.25); }
+.menu-personal .menu-go { background: var(--on-accent); }
+.menu-icon { position: relative; width: 50px; height: 50px; border-radius: 16px; }
+.menu-icon-play { background: var(--soprano-l); }
+.menu-icon-play::after { content: ""; position: absolute; left: 19px; top: 15px; border-left: 16px solid var(--soprano); border-block: 10px solid transparent; }
 .menu-icon-check { background: var(--tenor-l); }
 .menu-icon-check::after {
   content: "";
   position: absolute;
-  left: 16px;
+  left: 18px;
   top: 11px;
-  width: 10px;
-  height: 18px;
+  width: 11px;
+  height: 20px;
   border: solid var(--tenor);
   border-width: 0 4px 4px 0;
   border-radius: 1px;
   transform: rotate(40deg);
 }
-
 @media (min-width: 720px) {
-  .home-menu { gap: 18px; }
-  .menu-tile { grid-column: auto; min-height: min(40dvh, 340px); padding: 30px; }
-  .menu-small { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 18px; min-height: 0; padding: 22px 26px; }
-  .menu-small .menu-icon { margin: 0; width: 56px; height: 56px; border-radius: 18px; }
-  .menu-small .menu-icon-play::after { left: 22px; top: 18px; border-left-width: 17px; border-block-width: 10px; }
-  .menu-small .menu-icon-check::after { left: 21px; top: 14px; width: 11px; height: 21px; }
-  .menu-small .menu-name { margin: 0; }
-  .menu-small .menu-desc { flex-basis: 100%; padding-left: 74px; margin-top: -6px; }
+  .home-menu { gap: 16px; }
+  .menu-tile { padding: 20px 36px; column-gap: 28px; }
+  .menu-mark { width: 96px; }
+  .menu-name { font-size: 2rem; }
+  .menu-desc { font-size: 1rem; }
+  .menu-go { width: 52px; height: 52px; }
 }
-.page-home { max-width: 1180px; min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; padding-block: 32px; }
-.page-home .home-hero { margin-top: 0; }
+.page-home { max-width: 1180px; height: 100dvh; display: flex; flex-direction: column; padding-block: max(24px, env(safe-area-inset-top)) 24px; }
+html:has(.page-home), html:has(.page-home) body { height: 100%; overflow: hidden; }
 .list-head { display: flex; align-items: center; gap: 16px; margin: 4px 0 20px; }
 .list-head h1 { margin: 0; }
 
@@ -674,34 +677,36 @@ select.dock-pill { -webkit-appearance: none; appearance: none; text-align: cente
 .pdf-card { padding-bottom: 0; background: #f4f7f9; }
 .score.pdf-pages > .pdf-page { display: flex; align-items: center; justify-content: center; gap: 24px; overflow: auto; }
 .pdf-page canvas { display: block; flex: none; margin: auto 0; background: #fff; box-shadow: 0 1px 6px rgb(23 48 64 / 0.16); }
-/* The page gets the whole card. Page count and size hide behind a small button at the bottom left. */
-.pdf-tools { position: absolute; z-index: 3; left: 14px; bottom: 14px; display: flex; align-items: center; gap: 8px; }
-.pdf-tools-toggle {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: rgb(255 255 255 / 0.92);
-  box-shadow: 0 4px 14px rgb(23 48 64 / 0.18);
-  color: var(--ink);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.pdf-tools.open .pdf-tools-toggle { background: var(--dock); color: var(--dock-ink); font-size: 1.4rem; }
-.pdf-score .score-toolbar {
+/* The page gets the whole card. Only the page count sits in the bottom-left corner; it opens the size controls. */
+.pdf-score .score-toolbar.pdf-tools {
+  position: absolute;
+  z-index: 3;
+  left: 14px;
+  bottom: 14px;
   flex-wrap: nowrap;
-  gap: 12px;
-  padding: 4px 4px 4px 18px;
+  gap: 4px;
+  padding: 4px;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.95);
-  box-shadow: 0 6px 20px rgb(23 48 64 / 0.18);
+  background: rgb(255 255 255 / 0.9);
+  box-shadow: 0 4px 14px rgb(23 48 64 / 0.16);
   white-space: nowrap;
 }
-.pdf-score .pager-count { display: inline; }
+.pdf-tools .pager-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.pdf-tools .pager-count::after { content: "−+"; margin-left: 10px; color: var(--soft); font-weight: 700; letter-spacing: 1px; }
+.pdf-tools.open .pager-count::after { content: none; }
+.pdf-tools .zoomer button { min-height: 40px; width: 40px; }
+
 .pdf-status { position: absolute; inset: 50% 0 auto; text-align: center; color: var(--soft); }
 .pdf-status.notice { inset: 40% 24px auto; }
 
@@ -720,6 +725,7 @@ select.dock-pill { -webkit-appearance: none; appearance: none; text-align: cente
   box-shadow: 0 18px 48px rgb(23 48 64 / 0.25);
 }
 .score-drawer[hidden] { display: none; }
+.score-drawer { overscroll-behavior: contain; }
 .drawer-title { margin: 0 10px 12px; font-family: var(--display); font-size: 1.3rem; }
 .score-drawer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .score-drawer li button {

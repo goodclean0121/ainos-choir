@@ -202,8 +202,8 @@ export function PdfScoreView({ src, title }: { src: string; title: string }) {
     press.current = undefined;
   }
 
-  // The page count and size controls stay out of the way: a small button opens them,
-  // and they fold away again after a few seconds untouched.
+  // Only the page count sits in the corner; tapping it opens the size controls,
+  // which fold away again after a few seconds untouched.
   const [toolsOpen, setToolsOpen] = useState(false);
   const toolsTimer = useRef<number>(undefined);
   function showTools() {
@@ -225,31 +225,25 @@ export function PdfScoreView({ src, title }: { src: string; title: string }) {
 
   return (
     <section className="score-paged pdf-score" aria-label={`${title} 악보`}>
-      <div className={toolsOpen ? "pdf-tools open" : "pdf-tools"}>
+      <div id="pdf-toolbar" className={toolsOpen ? "score-toolbar pdf-tools open" : "score-toolbar pdf-tools"}>
         <button
           type="button"
-          className="pdf-tools-toggle"
+          className="pager-count"
           aria-expanded={toolsOpen}
-          aria-controls="pdf-toolbar"
-          aria-label={toolsOpen ? "쪽 번호와 크기 닫기" : "쪽 번호와 크기 보기"}
+          aria-label={pages > 0 ? `${first}쪽, 전체 ${pages}쪽. 악보 크기 조절 ${toolsOpen ? "닫기" : "열기"}` : "악보 크기 조절"}
           onClick={() => (toolsOpen ? setToolsOpen(false) : showTools())}
         >
-          <span aria-hidden="true">{toolsOpen ? "×" : pages > 0 ? first : ""}</span>
+          {pages > 0 ? `${first === last ? first : `${first}–${last}`} / ${pages} 쪽` : "…"}
         </button>
         {toolsOpen && (
-          <div id="pdf-toolbar" className="score-toolbar">
-            <span className="pager-count" aria-live="polite">
-              {pages > 0 ? `${first === last ? first : `${first}–${last}`} / ${pages} 쪽` : ""}
-            </span>
-            <div className="zoomer" role="group" aria-label="악보 크기">
-              <button type="button" aria-label="작게" onClick={() => changeZoom(-1)} disabled={zoom <= 1}>
-                −
-              </button>
-              <span className="zoom-value">{zoom === 1 ? "맞춤" : `${Math.round(zoom * 100)}%`}</span>
-              <button type="button" aria-label="크게" onClick={() => changeZoom(1)} disabled={zoom >= MAX_ZOOM}>
-                +
-              </button>
-            </div>
+          <div className="zoomer" role="group" aria-label="악보 크기">
+            <button type="button" aria-label="작게" onClick={() => changeZoom(-1)} disabled={zoom <= 1}>
+              −
+            </button>
+            <span className="zoom-value">{zoom === 1 ? "맞춤" : `${Math.round(zoom * 100)}%`}</span>
+            <button type="button" aria-label="크게" onClick={() => changeZoom(1)} disabled={zoom >= MAX_ZOOM}>
+              +
+            </button>
           </div>
         )}
       </div>
