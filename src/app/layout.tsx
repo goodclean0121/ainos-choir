@@ -9,6 +9,8 @@ const noto = Noto_Sans_KR({ weight: ["300", "400"], variable: "--font-noto", pre
 export const metadata: Metadata = {
   title: "파트노트",
   description: "아이노스 합창단 파트 연습",
+  // Opens full screen when added to an iPad or iPhone home screen.
+  appleWebApp: { capable: true, title: "파트노트", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#f4f1ea" };
