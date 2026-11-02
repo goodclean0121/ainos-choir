@@ -3,17 +3,36 @@
 합창단 단원이 자기 파트의 음을 혼자서도 정확히 익힐 수 있게 돕는 웹앱입니다.
 지금 들어 있는 것:
 
-- **연습 화면** (`/songs/<곡>`): 내 파트 고르기(기기에 기억), 다른 파트 흐리게, 계이름 표시, 파트별 음량, 빠르기 50~120%, 구간 반복, 음표 누르면 소리와 이름, 이 곡의 악상기호 설명.
-- **악보 가져오기** (`/import`): 여러 형식을 MusicXML로 읽고 파트를 나눈 뒤 "이 곡으로 연습하기"로 바로 연습 화면에 넘깁니다.
-
-곡 목록은 아직 `public/songs/index.json`에 있는 정적 파일입니다(저장 기능은 다음 단계). 예제 곡은 `node scripts/make-demo-song.mjs`로 다시 만듭니다.
+- **단원**: 합창단 암호를 한 번 넣으면 공개된 곡 목록(`/`)과 연습 화면(`/songs/<곡>`)을 쓸 수 있어요. 연습 화면에서는 내 파트 고르기, 다른 파트 흐리게, 계이름, 파트별 음량, 빠르기, 구간 반복, 음표 듣기, 악상기호 설명을 할 수 있어요.
+- **관리자** (`/admin`): 이메일 링크로 로그인, 악보 올리기(초안), 들어 보고 공개·내리기·지우기, 합창단 암호 바꾸기.
 
 ## 실행
 
 ```bash
 npm install
-npm run dev            # http://localhost:3000/import
+cp .env.example .env.local   # 값 채우기 (아래 Supabase 설정)
+npm run dev                  # http://localhost:3000
 ```
+
+Supabase 없이 화면만 보려면 테스트 모드로 띄워요. 곡은 메모리에만 있고, 암호는 `test-choir`, 관리자는 로그인 없이 들어가요.
+**운영에서는 절대 켜지 마세요.** Supabase 환경 변수가 있으면 켜지지 않아요.
+
+```bash
+AINOS_TEST_MODE=1 npm run dev
+```
+
+## Supabase 설정 (한 번만)
+
+1. 표와 보안 규칙: `supabase/migrations/`의 SQL이 프로젝트에 적용돼 있어요(적용 완료).
+2. API 키: 대시보드 **Project Settings → API Keys**에서 publishable 키와 secret 키를 `.env.local`에 넣어요. secret 키는 서버에만 둬요.
+3. 로그인 메일: **Authentication → URL Configuration**에서 Site URL을 앱 주소로(개발 중엔 `http://localhost:3000`), Redirect URLs에 `<앱 주소>/auth/confirm`을 추가해요.
+4. 메일 템플릿: **Authentication → Emails**에서 **Magic Link**와 **Confirm signup** 두 템플릿의 링크를 모두
+   `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/admin` 로 바꿔요.
+   (첫 로그인은 계정을 만드는 Confirm signup 메일로 가요. 휴대폰 메일 앱이 링크를 다른 브라우저로 열어도 로그인돼요.)
+   관리자 권한은 비밀번호 없이 메일 링크로 만든 계정에만 붙어요. 누가 먼저 관리자 이메일로 비밀번호 가입을 해 두었다면
+   **Authentication → Users**에서 그 계정을 지우고 다시 로그인 링크를 받으세요.
+5. 관리자 추가: SQL 편집기에서 `insert into private.admin_emails (email) values ('새주소@example.com');` 후 `.env.local`의 `ADMIN_EMAILS`에도 추가해요.
+6. 첫 로그인 뒤 `/admin/settings`에서 합창단 암호를 정해요. 암호가 없으면 단원은 곡을 못 열어요.
 
 MusicXML(.musicxml, .xml, .mxl)은 변환 서버 없이 브라우저에서 바로 읽습니다.
 그 밖의 형식을 받으려면 변환 서버를 띄우고 주소를 알려 주세요.
@@ -61,5 +80,5 @@ npm run e2e            # 화면 테스트 (Playwright, 휴대폰 크기)
 - MuseScore와 MIDI 변환은 MuseScore 3.2(Ubuntu 패키지)로 실제 확인했습니다. MIDI는 파트 이름이 "Grand Piano"로 바뀌어 역할을 직접 골라야 합니다.
 - 반복 기호는 도돌이표, `times`, 1·2·3번 괄호까지 펼칩니다. D.S., D.C., 코다는 아직 펼치지 않고 적힌 순서대로 재생합니다.
 - 재생 음색은 기본 신시사이저입니다. 피아노 음색은 다음 단계에서 바꿉니다.
-- 가져온 악보로 연습하기는 그 브라우저 탭 안에서만 유지됩니다. 단원과 공유하려면 다음 단계(관리자 업로드·저장)가 필요합니다.
+- 앱을 인터넷에 올리는 배포는 아직 하지 않았어요.
 - iPhone에서 첫 '듣기'가 소리 없이 지나가는지 실제 기기로 아직 확인하지 못했습니다.

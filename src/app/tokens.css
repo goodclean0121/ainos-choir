@@ -1,0 +1,47 @@
+/*
+ * 파트노트 design tokens: the one place colours, type, shapes and sizes are defined.
+ * Simple and light: thin gothic type, navy + ivory, a brass accent. No serif, no bold (700).
+ */
+:root {
+  /* Colour */
+  --c-bg: #f4f1ea;            /* ivory ground */
+  --c-card: #fbf9f4;          /* cards */
+  --c-navy-tint: #e3e8f1;     /* pale navy surfaces, progress track */
+  --c-text: #14213d;          /* deep navy text */
+  --c-text-soft: #4f5d7c;     /* secondary text */
+  --c-primary: #1b2f5e;       /* main buttons, emphasis, progress fill */
+  --c-tabbar: #14213d;        /* bottom tab bar */
+  --c-border: #c9d0de;        /* outlines */
+  --c-divider:#d6ddeb;       /* dividers */
+  --c-brass: #e3b85b;         /* brass on dark */
+  --c-brass-text: #7a5614;    /* brass text on light */
+  --c-brass-line: #b8862b;    /* brass outline */
+  --c-tab-idle: #aeb9d1;      /* unselected tab */
+  --c-on-primary: #fbf9f4;
+  --c-soprano: #b8455a;
+  --c-alto: #8a5a14;
+  --c-tenor: #3f6b5a;
+  --c-bass: #4f63a0;
+
+  /* Type */
+  --font: "Noto Sans KR", var(--font-noto, sans-serif), "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --w-body: 300;
+  --w-strong: 400;
+  --fs-title: 22px;
+  --fs-card-title: 16px;
+  --fs-body: 15px;
+  --fs-small: 13px;
+  --fs-tiny: 12px;
+
+  /* Shape */
+  --r-card: 12px;
+  --r-card-lg: 14px;
+  --r-pill: 22px;
+  --h-touch: 44px;
+  --hairline: 1px solid var(--c-border);
+
+  /* Space */
+  --gutter: 24px;
+  --tabbar-h: 76px;
+  --bar-h: 2px;
+}

@@ -1,15 +1,17 @@
 "use client";
 
-import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScoreView, type TappedNote } from "@/components/ScoreView";
 import { createPlayer } from "@/audio/player";
+import { unlockAudio } from "@/audio/unlock";
 import { decorateScore } from "@/score/decorate";
 import { findMarkings, type GlossaryEntry } from "@/score/glossary";
 import { fifthsAt, noteLabel, toMidi } from "@/score/noteName";
 import { parseMusicXml } from "@/score/parseMusicXml";
 import { assignRoles } from "@/score/roles";
 import type { PartInfo, ScoreModel } from "@/score/types";
-import { loadSong } from "@/songs/loadSong";
+import { loadSong, type Song } from "@/songs/loadSong";
 import { recallPart, rememberPart } from "@/songs/myPart";
 
 const OTHER_VOLUME = 0.35;
@@ -39,8 +41,8 @@ function defaultVolumes(model: ScoreModel, mine: string | undefined) {
   return Object.fromEntries(model.parts.map((p) => [p.id, !mine || p.id === mine ? 1 : OTHER_VOLUME]));
 }
 
-export function Practice({ params }: { params: Promise<{ id: string }> }) {
-  const songId = decodeURIComponent(use(params).id);
+/** The practice screen. `song` comes from the server; without it the song is loaded in the browser (imported scores). */
+export function Practice({ songId, song: given, backHref }: { songId: string; song?: Song; backHref?: string }) {
   const [song, setSong] = useState<Loaded>();
   const [error, setError] = useState<string>();
   const [myPart, setMyPart] = useState<string>();
@@ -72,7 +74,7 @@ export function Practice({ params }: { params: Promise<{ id: string }> }) {
 
   useEffect(() => {
     let cancelled = false;
-    loadSong(songId)
+    (given ? Promise.resolve(given) : loadSong(songId))
       .then((s) => {
         if (cancelled) return;
         const model = parseMusicXml(s.xml);
@@ -82,7 +84,7 @@ export function Practice({ params }: { params: Promise<{ id: string }> }) {
           title: s.title,
           xml: s.xml,
           model,
-          roles: s.roles ?? assignRoles(model.parts),
+          roles: s.roles && Object.keys(s.roles).length > 0 ? s.roles : assignRoles(model.parts),
           markings: findMarkings(s.xml),
         });
         setMyPart(mine);
@@ -96,7 +98,7 @@ export function Practice({ params }: { params: Promise<{ id: string }> }) {
       cancelled = true;
       player.current?.stop();
     };
-  }, [songId]);
+  }, [songId, given]);
 
   const scoreXml = useMemo(() => {
     if (!song || !myPart) return song?.xml;
@@ -113,7 +115,13 @@ export function Practice({ params }: { params: Promise<{ id: string }> }) {
     return player.current;
   }
 
+  /** Must run synchronously inside the tap, before anything is awaited. */
+  function unlock() {
+    unlockAudio(toneModule.current ?? { start() {} });
+  }
+
   async function play(opts: { loop?: boolean; from?: number; to?: number } = {}) {
+    unlock();
     setPlaying(true);
     const request = ++playRequest.current;
     const p = await getPlayer();
@@ -175,6 +183,7 @@ export function Practice({ params }: { params: Promise<{ id: string }> }) {
   const onNoteTap = useCallback(
     (note: TappedNote) => {
       if (!song) return;
+      unlock();
       setTapped(noteLabel(note, fifthsAt(song.model.keys, note.measure)));
       void getPlayer().then((p) => p?.playNote(toMidi(note)));
     },
@@ -201,130 +210,159 @@ export function Practice({ params }: { params: Promise<{ id: string }> }) {
   });
   const cursorMeasure = current == null ? null : (model.timeline[current]?.measure ?? null);
 
+  const myCss = FAMILY[roles[myPart ?? ""]?.[0] ?? ""]?.css ?? "unknown";
+
   return (
-    <>
-      <h1>{song.title}</h1>
+    <div className="practice">
+      <div className="practice-stage">
+        <header className="practice-head">
+          {backHref && (
+            <Link href={backHref} className="back-circle" aria-label="곡 목록으로">
+              <span aria-hidden="true">←</span>
+            </Link>
+          )}
+          <div className="practice-title">
+            <span className="mode-label">연습 모드</span>
+            <h1>{song.title}</h1>
+          </div>
+          <div className="part-picker" role="group" aria-label="내 파트">
+            {model.parts.map((p, i) => {
+              const role = roles[p.id];
+              const css = FAMILY[role?.[0] ?? ""]?.css ?? "unknown";
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={`part-choice part-${css}`}
+                  aria-pressed={myPart === p.id}
+                  onClick={() => choosePart(p.id)}
+                >
+                  {partLabel(p, role, i)}
+                </button>
+              );
+            })}
+          </div>
+        </header>
 
-      <section className="my-part" aria-labelledby="my-part-title">
-        <h2 id="my-part-title">내 파트</h2>
-        {!myPart && <p className="hint">부를 파트를 고르면 그 파트 음표만 진하게 보여요.</p>}
-        <div className="part-picker">
-          {model.parts.map((p, i) => {
-            const role = roles[p.id];
-            const css = FAMILY[role?.[0] ?? ""]?.css ?? "unknown";
-            return (
-              <button
-                key={p.id}
-                type="button"
-                className={`part-choice part-${css}`}
-                aria-pressed={myPart === p.id}
-                onClick={() => choosePart(p.id)}
-              >
-                {partLabel(p, role, i)}
-              </button>
-            );
-          })}
+        <div className="score-card">
+          <ScoreView
+            xml={scoreXml}
+            onNoteTap={onNoteTap}
+            cursorMeasure={cursorMeasure}
+            paged
+            toolbarStart={
+              <div className="solfege-toggle">
+                <span id="solfege-label">계이름</span>
+                <button
+                  type="button"
+                  role="switch"
+                  className="switch"
+                  aria-checked={solfegeOn}
+                  aria-labelledby="solfege-label"
+                  title={myPart ? undefined : "파트를 고르면 켤 수 있어요"}
+                  disabled={!myPart}
+                  onClick={() => setSolfegeOn((v) => !v)}
+                />
+              </div>
+            }
+          />
         </div>
-      </section>
-
-      <div className="practice-tools">
-        <button
-          type="button"
-          className="toggle"
-          aria-pressed={solfegeOn}
-          disabled={!myPart}
-          onClick={() => setSolfegeOn((v) => !v)}
-        >
-          계이름 표시
-        </button>
-        {!myPart && <span className="hint">파트를 고르면 계이름을 볼 수 있어요.</span>}
       </div>
 
-      {markings.length > 0 && (
-        <section className="markings" aria-labelledby="markings-title">
-          <h2 id="markings-title">이 곡의 기호</h2>
-          <div className="marking-chips">
-            {markings.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                className="chip"
-                aria-pressed={marking?.id === m.id}
-                onClick={() => setMarking(marking?.id === m.id ? undefined : m)}
-              >
-                {m.symbol}
-              </button>
-            ))}
-          </div>
-          {marking && (
-            <div className="marking-sheet" role="region" aria-label={`${marking.name} 설명`}>
-              <p className="marking-name">
-                <span className="marking-symbol">{marking.symbol}</span> {marking.name}
-              </p>
-              <p>{marking.meaning}</p>
-            </div>
-          )}
-        </section>
-      )}
-
-
-      <p className="tap-hint">음표를 누르면 그 음을 들려줘요.</p>
-      <ScoreView xml={scoreXml} onNoteTap={onNoteTap} cursorMeasure={cursorMeasure} />
-
-      <details className="volumes">
-        <summary>파트별 음량</summary>
-        <ul>
-          {model.parts.map((p, i) => (
-            <li key={p.id}>
-              <label>
-                <span>{partLabel(p, roles[p.id], i)}</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  value={volumes[p.id] ?? 1}
-                  onChange={(e) => changeVolume(p.id, Number(e.target.value))}
-                />
-              </label>
-            </li>
-          ))}
-        </ul>
-      </details>
-
-      <div className="play-bar" role="region" aria-label="재생">
-        <p className="tapped" aria-live="polite">
-          {tapped ? `누른 음: ${tapped}` : ""}
-        </p>
-        <div className="play-row">
-          {playing ? (
-            <button type="button" className="primary" onClick={stop}>
-              정지
-            </button>
-          ) : (
-            <button type="button" className="primary" onClick={() => play()}>
-              듣기
-            </button>
-          )}
-          <label>
-            <span className="visually-hidden">빠르기</span>
-            <select value={tempoRatio} onChange={(e) => changeTempo(Number(e.target.value))} aria-label="빠르기">
-              {TEMPOS.map((t) => (
-                <option key={t} value={t}>
-                  {`빠르기 ${Math.round(t * 100)}%`}
-                </option>
+      <aside className="practice-side" aria-label="연습 도구">
+        {!myPart && <p className="pick-hint">부를 파트를 위에서 고르면 그 파트 음표만 진하게 보이고 계이름을 켤 수 있어요.</p>}
+        <div className={`note-card part-${myCss}${tapped ? " has-note" : ""}`}>
+          <small>누른 음</small>
+          <p className="tapped" aria-live="polite">
+            {tapped ?? ""}
+          </p>
+          {!tapped && <p className="note-empty">악보에서 음표를 누르면 그 음을 들려줘요.</p>}
+        </div>
+        {markings.length > 0 && (
+          <section className="card markings" aria-labelledby="markings-title">
+            <h2 id="markings-title">이 곡의 기호</h2>
+            <div className="marking-chips">
+              {markings.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className="chip"
+                  aria-pressed={marking?.id === m.id}
+                  onClick={() => setMarking(marking?.id === m.id ? undefined : m)}
+                >
+                  {m.symbol}
+                </button>
               ))}
-            </select>
-          </label>
-          <button type="button" className="toggle" aria-pressed={loopOn} onClick={() => changeLoop({ on: !loopOn })}>
+            </div>
+            {marking ? (
+              <div className="marking-sheet" role="region" aria-label={`${marking.name} 설명`}>
+                <p className="marking-name">{marking.name}</p>
+                <p>{marking.meaning}</p>
+              </div>
+            ) : (
+              <p className="marking-empty">기호를 누르면 뜻을 알려 줘요.</p>
+            )}
+          </section>
+        )}
+        <section className="card volumes" aria-labelledby="volumes-title">
+          <h2 id="volumes-title">파트별 음량</h2>
+          <ul>
+            {model.parts.map((p, i) => {
+              const css = FAMILY[roles[p.id]?.[0] ?? ""]?.css ?? "unknown";
+              return (
+                <li key={p.id} className={`part-${css}`}>
+                  <label>
+                    <span>{partLabel(p, roles[p.id], i)}</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={volumes[p.id] ?? 1}
+                      style={{ "--level": `${(volumes[p.id] ?? 1) * 100}%` } as React.CSSProperties}
+                      onChange={(e) => changeVolume(p.id, Number(e.target.value))}
+                    />
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      </aside>
+
+      <div className="dock" role="region" aria-label="재생">
+        <div className="dock-row">
+          {playing ? (
+            <button type="button" className="play-button is-playing" onClick={stop} aria-label="정지" />
+          ) : (
+            <button type="button" className="play-button" onClick={() => play()} aria-label="듣기" />
+          )}
+          <select
+            className="dock-pill"
+            value={tempoRatio}
+            onChange={(e) => changeTempo(Number(e.target.value))}
+            aria-label="빠르기"
+          >
+            {TEMPOS.map((t) => (
+              <option key={t} value={t}>
+                {`빠르기 ${Math.round(t * 100)}%`}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="dock-pill"
+            aria-pressed={loopOn}
+            onClick={() => changeLoop({ on: !loopOn })}
+          >
             구간 반복
           </button>
         </div>
         {loopOn && (
-          <div className="play-row">
+          <div className="dock-row">
             <label>
               <span>처음</span>
-              <select value={range[0]} onChange={(e) => changeLoop({ from: Number(e.target.value) })}>
+              <select className="dock-pill" value={range[0]} onChange={(e) => changeLoop({ from: Number(e.target.value) })}>
                 {measureOptions.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
@@ -334,7 +372,7 @@ export function Practice({ params }: { params: Promise<{ id: string }> }) {
             </label>
             <label>
               <span>끝</span>
-              <select value={range[1]} onChange={(e) => changeLoop({ to: Number(e.target.value) })}>
+              <select className="dock-pill" value={range[1]} onChange={(e) => changeLoop({ to: Number(e.target.value) })}>
                 {measureOptions.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
@@ -345,6 +383,6 @@ export function Practice({ params }: { params: Promise<{ id: string }> }) {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }

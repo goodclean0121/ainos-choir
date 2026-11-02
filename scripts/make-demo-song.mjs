@@ -1,10 +1,10 @@
-// Writes the practice example song (not a real hymn) to public/songs/.
+// Writes the practice example song (not a real hymn) used to seed the test-mode store.
 // Run: node scripts/make-demo-song.mjs
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const out = join(dirname(fileURLToPath(import.meta.url)), "..", "public", "songs");
+const out = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "server", "seed");
 
 // G major, 4/4, half-note chords: I IV | V I | vi ii | V I(fermata).
 const CHORDS = [
@@ -59,8 +59,4 @@ const xml =
   `</part-list>\n${parts.join("\n")}\n</score-partwise>\n`;
 
 writeFileSync(join(out, "practice-example.musicxml"), xml);
-writeFileSync(
-  join(out, "index.json"),
-  JSON.stringify([{ id: "practice-example", title: "연습용 예제 (4성부 화음 연습)", file: "practice-example.musicxml" }], null, 2) + "\n",
-);
 console.log("demo song written");
