@@ -27,8 +27,16 @@ export function AppShell({ tab, links, children }: { tab: TabId; links: TabLinks
     () => uiScale(window.innerWidth, window.innerHeight),
     () => 1,
   );
+  // Measured in pixels on purpose: Safari does not enlarge viewport units (dvh) with zoom,
+  // so a dvh height left the iPad screen two-thirds filled. Pixel lengths scale the same everywhere.
+  const height = useSyncExternalStore(
+    subscribe,
+    () => window.innerHeight,
+    () => 0,
+  );
+  const style = { "--ui-scale": scale, ...(height ? { "--app-h": `${height}px` } : {}) };
   return (
-    <div className="app" style={{ "--ui-scale": scale } as React.CSSProperties}>
+    <div className="app" style={style as React.CSSProperties}>
       <div className="app-main">{children}</div>
       <nav className="tabbar" aria-label="메뉴">
         {TABS.map(({ id, label, icon: TabIcon }) => (

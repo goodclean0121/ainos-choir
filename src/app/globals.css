@@ -910,7 +910,7 @@ html:has(.page-calendar), html:has(.page-calendar) body { height: 100%; overflow
 .app {
   /* The phone design, enlarged as a whole on tablets. */
   zoom: var(--ui-scale, 1);
-  height: calc(100dvh / var(--ui-scale, 1));
+  height: calc(var(--app-h, 100dvh) / var(--ui-scale, 1));
   display: flex;
   flex-direction: column;
   background: var(--c-bg);
