@@ -4,10 +4,11 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
 import { canvasPixelRatio, fitScale, pagesPerScreen, pdfBytes } from "@/pdf/fit";
 import { setupPdfWorker } from "@/pdf/worker";
-import { pageAt, stepZoom } from "@/score/paging";
+import { pageAt, stepZoom, tapTurn, type Turn } from "@/score/paging";
 
 const ZOOM_KEY = "ainos:pdf-zoom";
 const MAX_ZOOM = 2;
+const MOVE_SLOP = 10;
 
 function recallZoom(): number {
   try {
@@ -29,7 +30,8 @@ function rememberZoom(z: number) {
 type PageSize = { width: number; height: number };
 
 /**
- * A PDF score shown one page per screen. Swipe or tap the edges to turn pages;
+ * A PDF score shown one page per screen. Swipe to turn a page; tap the left or right third
+ * to jump to the first or last page.
  * 100% fits the whole page, larger sizes scroll inside the page.
  * Give each score its own `key`, so switching songs starts from a fresh first page.
  */
@@ -152,10 +154,51 @@ export function PdfScoreView({ src, title }: { src: string; title: string }) {
   const screens = Math.ceil(pages / perScreen);
   const shown = Array.from({ length: screens }, (_, i) => sizes.slice(i * perScreen, (i + 1) * perScreen));
 
-  function goTo(target: number) {
+  function goTo(target: number, smooth = true) {
     const el = stripRef.current;
     if (!el || target < 0 || target >= screens) return;
-    el.scrollTo({ left: target * el.clientWidth, behavior: "smooth" });
+    el.scrollTo({ left: target * el.clientWidth, behavior: smooth ? "smooth" : "auto" });
+  }
+
+  function turn(action: Turn) {
+    if (action === "prev") goTo(page - 1);
+    if (action === "next") goTo(page + 1);
+    if (action === "first" || action === "last") {
+      const target = action === "first" ? 0 : screens - 1;
+      if (target === page) return;
+      goTo(target, false);
+      setJumped(action === "first" ? "첫 쪽" : "마지막 쪽");
+      window.clearTimeout(jumpTimer.current);
+      jumpTimer.current = window.setTimeout(() => setJumped(undefined), 1200);
+    }
+  }
+
+  // A tap on the left or right third jumps to the first or last page. A drag is a swipe, not a tap.
+  const press = useRef<{ x: number; y: number; moved: boolean }>(undefined);
+  const jumpTimer = useRef<number>(undefined);
+  const [jumped, setJumped] = useState<string>();
+
+  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.button !== 0 || screens < 2) return;
+    press.current = { x: e.clientX, y: e.clientY, moved: false };
+  }
+
+  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const state = press.current;
+    if (state && Math.hypot(e.clientX - state.x, e.clientY - state.y) > MOVE_SLOP) state.moved = true;
+  }
+
+  function onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    const state = press.current;
+    press.current = undefined;
+    if (!state || state.moved) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const action = tapTurn(e.clientX - rect.left, rect.width);
+    if (action) turn(action);
+  }
+
+  function onPointerCancel() {
+    press.current = undefined;
   }
 
   function changeZoom(direction: 1 | -1) {
@@ -194,9 +237,17 @@ export function PdfScoreView({ src, title }: { src: string; title: string }) {
           firstPage.current = screen * perScreen;
           setPage(screen);
         }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
         onKeyDown={(e) => {
-          if (e.key === "ArrowRight") goTo(page + 1);
-          if (e.key === "ArrowLeft") goTo(page - 1);
+          const keys: Record<string, Turn> = { ArrowLeft: "prev", ArrowRight: "next", Home: "first", End: "last" };
+          const action = keys[e.key];
+          if (action) {
+            e.preventDefault();
+            turn(action);
+          }
         }}
       >
         {shown.map((group, screen) => (
@@ -227,27 +278,10 @@ export function PdfScoreView({ src, title }: { src: string; title: string }) {
       )}
       {error && <p className="notice notice-error pdf-status">{error}</p>}
 
-      {screens > 1 && (
-        <>
-          <button
-            type="button"
-            className="page-edge page-edge-prev"
-            aria-label="이전 쪽"
-            disabled={page === 0}
-            onClick={() => goTo(page - 1)}
-          >
-            ‹
-          </button>
-          <button
-            type="button"
-            className="page-edge page-edge-next"
-            aria-label="다음 쪽"
-            disabled={page >= screens - 1}
-            onClick={() => goTo(page + 1)}
-          >
-            ›
-          </button>
-        </>
+      {jumped && (
+        <p className="jump-toast" role="status">
+          {jumped}
+        </p>
       )}
     </section>
   );

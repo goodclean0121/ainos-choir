@@ -24,3 +24,16 @@ export function fitZoom(current: number, available: number, needed: number): num
   const target = (current * available) / needed;
   return [...ZOOM_STEPS].reverse().find((z) => z <= target + 1e-6) ?? ZOOM_STEPS[0];
 }
+
+export type Turn = "prev" | "next" | "first" | "last";
+
+/**
+ * What a tap on the score does, by where it lands across the page: the left third goes to the
+ * first page, the right third to the last, the middle does nothing. Swiping turns one page.
+ */
+export function tapTurn(x: number, width: number): Turn | undefined {
+  if (width <= 0) return undefined;
+  if (x < width / 3) return "first";
+  if (x > (width * 2) / 3) return "last";
+  return undefined;
+}

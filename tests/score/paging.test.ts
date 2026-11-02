@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ZOOM_STEPS, defaultZoom, fitZoom, pageAt, stepZoom } from "@/score/paging";
+import { ZOOM_STEPS, defaultZoom, fitZoom, pageAt, stepZoom, tapTurn } from "@/score/paging";
 
 describe("pageAt", () => {
   it("rounds a scroll position to the nearest page", () => {
@@ -55,5 +55,15 @@ describe("fitZoom", () => {
 
   it("never goes below the smallest size", () => {
     expect(fitZoom(1, 100, 1000)).toBe(ZOOM_STEPS[0]);
+  });
+});
+
+describe("tapTurn", () => {
+  it("jumps to the first page from the left third and the last page from the right third", () => {
+    expect(tapTurn(100, 900)).toBe("first");
+    expect(tapTurn(800, 900)).toBe("last");
+  });
+  it("does nothing in the middle third, where people tap to read", () => {
+    expect(tapTurn(450, 900)).toBeUndefined();
   });
 });

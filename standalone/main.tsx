@@ -42,6 +42,21 @@ function App() {
   const [view, setView] = useState<View>(readView);
   const [song, setSong] = useState<{ id: string; song: Song }>(SONGS[0]);
   const [error, setError] = useState<string>();
+  const [pdfs, setPdfs] = useState(PDFS);
+
+  // The trial keeps added scores only until the page is closed; the real app will save them.
+  async function addPdf(file: File): Promise<PdfScore> {
+    if (file.type && file.type !== "application/pdf") throw new Error("PDF 파일만 추가할 수 있어요");
+    const src = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error("파일을 읽지 못했어요"));
+      reader.readAsDataURL(file);
+    });
+    const score = { id: `file-${file.name}-${file.lastModified}`, title: file.name.replace(/\.pdf$/i, ""), src };
+    setPdfs((list) => [...list, score]);
+    return score;
+  }
 
   useEffect(() => {
     const onHash = () => setView(readView());
@@ -78,7 +93,7 @@ function App() {
   if (view === "group") {
     return (
       <main className="page page-practice">
-        <GroupPractice scores={PDFS} backHref="#" />
+        <GroupPractice scores={pdfs} backHref="#" onAdd={addPdf} />
       </main>
     );
   }
