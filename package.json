@@ -4,19 +4,25 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "npm run build:trial && node standalone/publish.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run --passWithNoTests",
     "e2e": "playwright test",
-    "test:converter": "node --test converter/*.test.mjs"
+    "test:converter": "node --test converter/*.test.mjs",
+    "build:trial": "vite build --config standalone/vite.config.mts && node standalone/inline.mjs standalone/dist standalone/dist/아이노스-체험판.html"
   },
   "dependencies": {
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.118.0",
     "jszip": "^3.10.2",
     "next": "16.4.3",
     "opensheetmusicdisplay": "^2.2.1",
+    "pdfjs-dist": "6.4.299",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "server-only": "0.0.1",
     "tone": "^15.1.22"
   },
   "devDependencies": {
