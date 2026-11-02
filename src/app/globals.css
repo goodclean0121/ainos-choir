@@ -916,10 +916,15 @@ html:has(.page-calendar), html:has(.page-calendar) body { height: 100%; overflow
   background: var(--c-bg);
   color: var(--c-text);
   font-size: var(--fs-body);
+  /* Zoom enlarges everything, borders and system insets included. These keep a true 1px line
+     and the device's real home-indicator and status-bar space at every size. */
+  --hairline: calc(1px / var(--ui-scale, 1)) solid var(--c-border);
+  --inset-top: calc(env(safe-area-inset-top) / var(--ui-scale, 1));
+  --inset-bottom: calc(env(safe-area-inset-bottom) / var(--ui-scale, 1));
 }
 html:has(.app), html:has(.app) body { height: 100%; overflow: hidden; }
 .app-main { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
-.screen { max-width: 600px; margin: 0 auto; padding: max(16px, env(safe-area-inset-top)) var(--gutter) 28px; display: grid; gap: 20px; align-content: start; }
+.screen { max-width: 600px; margin: 0 auto; padding: max(16px, var(--inset-top)) var(--gutter) 28px; display: grid; gap: 20px; align-content: start; }
 .screen-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--h-touch); }
 .screen-head h1 { margin: 0; font-size: var(--fs-title); font-weight: var(--w-body); font-family: var(--font); letter-spacing: -0.01em; }
 .section-title { margin: 0 0 10px; font-size: var(--fs-small); font-weight: var(--w-strong); color: var(--c-text-soft); }
@@ -930,8 +935,8 @@ html:has(.app), html:has(.app) body { height: 100%; overflow: hidden; }
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 120px));
   justify-content: center;
-  height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
+  height: calc(var(--tabbar-h) + var(--inset-bottom));
+  padding-bottom: var(--inset-bottom);
   background: var(--c-tabbar);
 }
 .tab { display: grid; justify-items: center; align-content: center; gap: 4px; color: var(--c-tab-idle); font-size: var(--fs-tiny); text-decoration: none; }
@@ -943,7 +948,7 @@ html:has(.app), html:has(.app) body { height: 100%; overflow: hidden; }
 .segment { display: grid; place-items: center; min-height: 36px; border-radius: 18px; color: var(--c-text-soft); font-size: var(--fs-small); text-decoration: none; }
 .segment[aria-current="page"] { background: var(--c-primary); color: var(--c-on-primary); }
 
-.card { display: grid; gap: 4px; padding: 16px; border: var(--hairline); border-radius: var(--r-card); background: var(--c-card); color: var(--c-text); text-decoration: none; }
+.card { display: grid; gap: 4px; padding: 16px; border: var(--hairline); box-shadow: none; border-radius: var(--r-card); background: var(--c-card); color: var(--c-text); text-decoration: none; }
 .card-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .card-title { font-size: var(--fs-card-title); font-weight: var(--w-strong); color: var(--c-text); text-decoration: none; }
 .card-sub { font-size: var(--fs-small); color: var(--c-text-soft); }
@@ -1034,3 +1039,8 @@ html:has(.app), html:has(.app) body { height: 100%; overflow: hidden; }
 .screen .list-head { margin-bottom: 16px; }
 .screen .list-head h1 { margin: 0; font-size: var(--fs-title); }
 .screen .list-head .mode-label { font-size: var(--fs-tiny); color: var(--c-text-soft); }
+
+/* Landscape tablets: the same single column, a little wider so the sides don't sit empty. */
+@media (orientation: landscape) and (min-width: 1000px) {
+  .app .screen { max-width: 680px; }
+}
